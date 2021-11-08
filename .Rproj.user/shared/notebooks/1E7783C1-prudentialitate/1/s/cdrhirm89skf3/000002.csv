@@ -1,0 +1,6 @@
+"0","flextable::flextable(data = params$tabel3 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with(""Utilizare""),"
+"0","    ~ .x * 100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = ""_"",replacement = "" "")) ) %>% flextable::colformat_double(j = 3:5, suffix = ""%"") %>%"
+"0","  flextable::theme_vanilla() %>% flextable::width(j = 2:5,width = 1.25,unit = ""in"") %>% flextable::width(j = 1,width = 1,unit = ""in"")"
+"2","Error in UseMethod(""mutate"") : 
+  no applicable method for 'mutate' applied to an object of class ""character""
+"

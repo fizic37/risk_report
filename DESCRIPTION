@@ -1,0 +1,35 @@
+Package: RiskReport
+Title: RiskReport
+Version: 0.0.0.9000
+Authors@R: person('Marius', 'Tita', email = 'marius.tita81@gmail.com', role = c('cre', 'aut'))
+Description: Automatisation app for risk reporting inside risk management. It helps
+  build current reports within risk management department.
+License: What license is it under?
+Imports: 
+    config (>= 0.3),
+    golem (>= 0.3.1),
+    shiny (>= 1.6.0),
+    bs4Dash,
+    magrittr,
+    DT,
+    dplyr,
+    formattable,
+    janitor,
+    kableExtra,
+    lubridate,
+    purrr,
+    readr,
+    readxl,
+    shinyWidgets,
+    shinyFeedback,
+    shinybusy,
+    shinyjs,
+    stringr,
+    htmltools,
+    rebus,
+    tibble,
+    tidyr,
+    pkgload
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1

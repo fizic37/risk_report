@@ -1,0 +1,9 @@
+/* Modifica backround-ul butonului de placeholder din inputFile */
+  .form-control {background-color: #fff !important;}
+      
+/* Modifica culoarea progress-bar-ului */
+  .progress-bar {background-color: #ff007b;}
+
+
+      
+      

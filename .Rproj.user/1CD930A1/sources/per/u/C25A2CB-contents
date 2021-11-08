@@ -1,0 +1,67 @@
+observeEvent(vals$sidebar_selected,{
+  
+  if (sum("garantii" == vals$sidebar_selected)==1) {
+    
+    callModule(module = mod_garantii_server,id = "garantii_ui_1", session = session)
+    vals$sidebar_selected <- c(vals$sidebar_selected,"garantii")
+  }
+  
+})
+
+tagList(
+  # Leave this function for adding external resources
+  golem_add_external_resources(),
+  bs4Dash::bs4DashPage(
+    header = bs4Dash::dashboardHeader(title = "FNGCIMM - Risk Reporting"),dark = FALSE,
+    sidebar = bs4Dash::dashboardSidebar(bs4Dash::sidebarMenu(
+      id = "tabs",
+      bs4Dash::menuItem(
+        tabName = "home",
+        text = "Home",
+        icon = icon("home"),
+        selected = F
+      ),
+      
+      bs4Dash::menuItem(
+        tabName = "prudentialitate",
+        text = "Prudentialitate",
+        icon = icon("check-square"),
+        selected = FALSE,startExpanded = TRUE,
+        bs4Dash::menuSubItem(
+          text = "Soldul de garantii ",
+          tabName = "garantii",
+          selected = TRUE,
+          icon = icon("money-bill")
+        )
+      )
+    ),
+    skin = "light",width = "300px"),
+    body = bs4Dash::dashboardBody()
+  ) )
+
+
+
+temp <-  bs4Dash::sidebarMenu(
+  id = "tabs",
+  bs4Dash::menuItem(
+    tabName = "home",
+    text = "Home",
+    icon = icon("home"),
+    selected = F
+  ),
+  
+  bs4Dash::menuItem(
+    tabName = "prudentialitate",
+    text = "Prudentialitate",
+    icon = icon("check-square"),
+    selected = FALSE,startExpanded = TRUE,
+    bs4Dash::menuSubItem(
+      text = "Soldul de garantii ",
+      tabName = "garantii",
+      selected = TRUE,
+      icon = icon("money-bill")
+    )
+  )
+)
+str(temp)
+bs4Dash::renderMenu(temp)

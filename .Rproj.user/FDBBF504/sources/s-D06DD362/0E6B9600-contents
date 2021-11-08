@@ -1,0 +1,121 @@
+
+.skin-blue .main-header .navbar {
+  background-color: #fff;
+}
+
+/* sidebar font color when not hovered */
+[class*=sidebar-light-] .nav-treeview>.nav-item>.nav-link {
+    color: black;
+}
+
+[class*=sidebar-light-] .nav-treeview>.nav-item>.nav-link.active, [class*=sidebar-light-] .nav-treeview>.nav-item>.nav-link.active:hover {
+    background-color: #f0bfbf;
+    color: #fff;
+}
+
+
+
+/* sidebar backround, font color when hovered, font size 
+.skin-blue .left-side, .skin-blue .main-sidebar, .skin-blue .wrapper {
+  background-color: #3cbcad;
+  color: #fff;
+  font-size: 16px;
+  }*/
+  
+.sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link.active, .sidebar-light-primary .nav-sidebar>.nav-item>.nav-link.active {
+    background-color: #bc3c4b;
+    color: #fff;
+}
+ 
+/* toggle button no hover 
+.skin-blue .main-header .navbar .sidebar-toggle {
+  color: #bc3c4b;
+}*/
+.navbar-light .navbar-nav .nav-link {
+    color: #bc3c4b;
+}
+
+/* toggle button when hovered  */                    
+.skin-blue .main-header .navbar .sidebar-toggle:hover{
+background-color: #3cbcad;
+}
+
+/* body backround color */
+.content-wrapper, .right-side {
+  background-color: #fff;
+}
+
+/* logo */
+.skin-blue .main-header .logo {
+  background-color: #fff;
+  color: #bc3c4b;
+}
+
+/* logo when hovered */
+.skin-blue .main-header .logo:hover {
+background-color: #fff;
+}
+
+
+
+.skin-blue .sidebar-menu>li.active>a, .skin-blue .sidebar-menu>li:hover>a {
+    background: #bc3c4b;
+    border-left-color: #bc3c4b;
+}
+
+/* buton edit datatable backround color 
+.btn-primary {
+    background-color: #3cbcad;
+    border-color: #bc3c4b;
+  } */
+
+/*   Modifica culoarea de backround a tuturor butoanelor */
+.btn-default {
+  background-color: #fff;
+  border-color: #bc3c4b;
+}
+
+/* Modifica backround-ul butonului de placeholder din inputFile */
+.form-control {background-color: #fff !important;}
+
+/* Modifica culoarea progress-bar-ului */
+.progress-bar {background-color: #3cbcad;}
+
+/* Modifica culoarea box-urilor din shinydashboard (success box) */
+.box.box-success {border-top-color: #3cbcad;} 
+
+/* Modific culoarea submeniului*/
+
+.skin-blue .sidebar-menu>li>.treeview-menu {
+    background: #47d9c8;
+}
+
+#litigii_noi_ui_1-new_litigiu {
+  border-color: #fff;
+}
+
+/* Modific culoarea textului din h1 , h2 */
+h1, h2, h3, h4, h5, h6 {
+    color: black;
+}
+
+#litigii_current_ui_1-down_baza_filtrata {
+color: #3cbcad;
+}
+
+.dropdown-item.active, .dropdown-item:active {
+    background-color: #3cbcad;
+}
+
+.btn-primary.disabled, .btn-primary:disabled {
+    color: #fff;
+    background-color: #3cbcad;
+    border-color: #3cbcad;
+}
+
+/* Modifica culoarea datei selectate */
+.datepicker table tr td.active:active, .datepicker table tr td.active.active, .datepicker table tr td.active.highlighted:active, .datepicker table tr td.active.highlighted.active {
+    color: #fff;
+    background-color: #bc3c4b;
+    border-color: #3cbcad;
+}

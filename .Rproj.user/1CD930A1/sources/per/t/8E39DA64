@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1627456066942.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "397005794",
+    "id" : "8E39DA64",
+    "lastKnownWriteTime" : 1627457398,
+    "last_content_update" : 1627457398433,
+    "path" : "C:/Marius Tita/OLD/marius/backup 27.11.2007/my doc/Directia administr. riscuri/Analize Risc/Web Plafon R/Risk applications/RiskReport/dev/01_start.R",
+    "project_path" : "dev/01_start.R",
+    "properties" : {
+        "cursorPosition" : "31,0",
+        "scrollLine" : "14"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

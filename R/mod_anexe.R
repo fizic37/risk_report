@@ -176,7 +176,7 @@ mod_anexe_server <- function(id, vals){
         DT::formatRound(columns = 3:6,digits = 0) %>% DT::formatPercentage(columns = 7,digits = 1)  })
    
     output$down_anexa_C <- downloadHandler(filename = function() {paste0("anexaB_",vals$report_date,".csv")}, 
-    content = function(file) {readr::write_csv(x =  vals_anexe$anexaC_final,file = file) } )
+    content = function(file) {readr::write_csv(x =  vals$anexaC_final,file = file) } )
   })
     
     
@@ -218,8 +218,8 @@ mod_anexe_server <- function(id, vals){
                   DT::formatRound(columns = 3:4,digits = 0) %>%
                                                DT::formatPercentage(columns = 5:6, digits = 1))
       
-      output$down_anexaA <- downloadHandler(filename = function() { paste0("anexaA_", input$vals$report_date,".csv") },
-                                            content = function(file) { readr::write_csv(x = vals_anexe$anexa_A, file = file ) } )
+      output$down_anexaA <- downloadHandler(filename = function() { paste0("anexaA_", vals$report_date,".csv") },
+                    content = function(file) { readr::write_csv(x = vals$anexa_A, file = file ) } )
       
     })
     
@@ -242,7 +242,7 @@ mod_anexe_server <- function(id, vals){
                                                     DT::formatRound(columns = 3:5)  )
       
       output$down_top_expuneri <- downloadHandler(filename = function() { paste0("top_expuneri ",vals$report_date,".csv")},
-                                                  content = function(file) { readr::write_csv(x =  vals$tabel_top_expuneri, file = file) } )
+                            content = function(file) { readr::write_csv(x =  vals$tabel_top_expuneri, file = file) } )
       
     })
     

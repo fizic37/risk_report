@@ -72,6 +72,8 @@ mod_plafoane_server <- function(id, vals){
           caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
               "Baza de date a Fondurilor Proprii:"),
           options = list(dom = "Bt", buttons = c("copy","csv","excel"))) %>% DT::formatRound(columns = 1:3,digits = 0) })
+   
+    
     # Outputs baza de date a plafoanelor din surse administrare (to the right of the page)
     output$baza_surse_administrare <-  DT::renderDataTable( { DT::datatable(
           data = vals_plafoane$baza_plafoane %>% dplyr::select(4:8),
@@ -136,29 +138,36 @@ mod_plafoane_server <- function(id, vals){
       
       vals$tabel3 <- vals_plafoane$utilizare_plafoane %>%
         dplyr::select(2, 4, 5) %>% dplyr::left_join(vals_plafoane$utilizare_plafoane_luna_anterioara %>%
-                                                      dplyr::select(2, 5),by = "Tip fonduri") %>% dplyr::left_join(vals_plafoane$utilizare_plafoane_an_anterior %>%
-                                                                                                                     dplyr::select(2, 5),by = "Tip fonduri") %>% dplyr::mutate("Tip fonduri" =
-                                                                                                                                                                                 stringr::str_remove_all(string = `Tip fonduri`, pattern = '[:digit:][:digit:]\\.') %>%
+                                                      dplyr::select(2, 5),
+                  by = "Tip fonduri") %>% dplyr::left_join(vals_plafoane$utilizare_plafoane_an_anterior %>%
+                         dplyr::select(2, 5), by = "Tip fonduri") %>% dplyr::mutate("Tip fonduri" =
+                          stringr::str_remove_all(string = `Tip fonduri`, pattern = '[:digit:][:digit:]\\.') %>%
                                                                                                                                                                                  stringr::str_trim(string = ., side = "left"))
       
-      
-      output$utilizare_plafoane <- DT::renderDataTable(DT::datatable(data = vals$tabel3,rownames = FALSE,
-                                                                     caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
-                                                                                                       "Tabelul 3 - Utilizarea plafoanelor de garantare"),options = list(dom = "Bt", buttons=c("copy","csv","excel")),
-                                                                     extensions = "Buttons") %>% DT::formatRound(columns = 2,digits = 0) %>% 
-                                                         DT::formatPercentage(columns = 3:5,digits = 1))
+      output$utilizare_plafoane <-  DT::renderDataTable(  DT::datatable(  data = vals$tabel3,
+            rownames = FALSE,
+            caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+                                              "Tabelul 3 - Utilizarea plafoanelor de garantare"),
+            options = list(dom = "Bt", buttons = c("copy", "csv", "excel")),
+            extensions = "Buttons"
+          ) %>% DT::formatRound(columns = 2, digits = 0) %>%
+            DT::formatPercentage(columns = 3:5, digits = 1)
+        )
       
       # Asamblez tabelul 4
       vals$tabel4 <- vals$view_baza_solduri %>% dplyr::filter(Tip_surse != "Nume_cont_stat", 
                 data_raport == vals$report_date) %>% dplyr::group_by(Tip_surse) %>%
         dplyr::summarise(Sold_garantii=sum(Sold_garantii)) %>% dplyr::arrange(Tip_surse) %>%
         janitor::adorn_totals(where = "row",name = "Total Surse proprii si administrare") %>%
-        cbind(data.frame(Sursa_de_finantare = c("Imprumuturi subordonate", "Capitaluri proprii","Fonduri proprii"),
+        cbind( tryCatch(expr = { 
+          data.frame(Sursa_de_finantare = c("Imprumuturi subordonate", "Capitaluri proprii","Fonduri proprii"),
                          "Valoare_sursa_de_finantare"= c(vals_plafoane$plafoane_data_curenta$Impr_subordon,
-                    vals_plafoane$plafoane_data_curenta$Cap_proprii,vals_plafoane$plafoane_data_curenta$Fonduri_proprii)))
+                    vals_plafoane$plafoane_data_curenta$Cap_proprii,vals_plafoane$plafoane_data_curenta$Fonduri_proprii)) },
+          error = function(e) { data.frame(Sursa_de_finantare = c("Imprumuturi subordonate", "Capitaluri proprii","Fonduri proprii"),
+                                           "Valoare_sursa_de_finantare" = rep("No data",3) ) }
+        ) )
       
-      
-      output$sinteza_plafoane <-   DT::renderDataTable( DT::datatable(  data = vals$tabel4,
+    output$sinteza_plafoane <-   DT::renderDataTable( DT::datatable(  data = vals$tabel4,
             rownames = FALSE,   caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
               paste0( "Tabelul 4 - Sinteza solduri de garanţii si surse de finantare – ",
                 vals$report_date  )  ), extensions = "Buttons",

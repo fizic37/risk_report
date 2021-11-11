@@ -205,7 +205,7 @@ mod_plafoane_server <- function(id, vals){
     observeEvent(vals_plafoane$finalise_process_compare_df,{ req(vals_plafoane$finalise_process_compare_df == TRUE )
     
       vals_plafoane$baza_plafoane <- vals_plafoane$df_new_prel
-      saveRDS(object = vals_plafoane$df_new_prel,file = "R/reactivedata/baza_plafoane.rds")
+      saveRDS(object = vals_plafoane$df_new_prel,file = "R/reactivedata/solduri/baza_plafoane.rds")
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
             .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))

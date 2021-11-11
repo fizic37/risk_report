@@ -6,11 +6,10 @@
 #'
 #' @noRd 
 #'
-#' @importFrom shiny NS tagList 
-
-# This modules handles submenu soldul de garantii under sidebar Prudentialitate - Database Tab
+#' @importFrom shiny NS tagList
 mod_garantii_database_ui <- function(id){
   ns <- NS(id)
+  # This modules handles submenu soldul de garantii under sidebar Prudentialitate - Database Tab
   
   fluidRow(   shinyjs::useShinyjs(),
     column( width = 3, selectInput( inputId = ns("date_baza_solduri"),

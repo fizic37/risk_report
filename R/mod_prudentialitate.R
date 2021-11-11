@@ -7,11 +7,11 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-
-# Handles UI calling for all Prudnetialitate sidebar and also processes Tabel 1 box
-
 mod_prudentialitate_ui <- function(id){
   ns <- NS(id)
+  
+  # Handles UI calling for all Prudentialitate sidebar and also processes Tabel 1 box
+  
   bs4Dash::tabsetPanel( id = ns("raport"),  selected = T,
     shinyjs::useShinyjs(),
     

@@ -281,8 +281,8 @@ mod_balanta_server <- function(id, vals){
           dplyr::slice(stringr::str_which(string = `Simbol cont`,
                         pattern = rebus::`%R%`('^272', rebus::zero_or_more(rebus::DIGIT)))))
                                                 
-      saveRDS(object = coresp_banci_curente, file = "R/reactivedata/coresp_banci_curente.rds")
-      saveRDS(object = coresp_banci_depozite, file = "R/reactivedata/coresp_banci_depozite.rds")
+      saveRDS(object = coresp_banci_curente, file = "R/reactivedata/balanta/coresp_banci_curente.rds")
+      saveRDS(object = coresp_banci_depozite, file = "R/reactivedata/balanta/coresp_banci_depozite.rds")
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
           .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
       
@@ -310,7 +310,7 @@ mod_balanta_server <- function(id, vals){
     })
       
     observeEvent(vals_balanta_upload$finalise_process_compare_df,{ req(vals_balanta_upload$finalise_process_compare_df == TRUE )
-       saveRDS(object = vals_balanta_upload$df_new_prel,file = "R/reactivedata/balanta_database.rds")
+       saveRDS(object = vals_balanta_upload$df_new_prel,file = "R/reactivedata/balanta/balanta_database.rds")
        
        shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
              .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))

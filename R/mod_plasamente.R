@@ -7,11 +7,11 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' 
-#' This module handles UI calling for plasamente tab and processes Tabel 9 and Tabel 10.
-#' Attention: I need boxes here in order to call specific modules when boxes are maximized or not collapsed
 mod_plasamente_ui <- function(id){
   ns <- NS(id)
+  
+  # This module handles UI calling for plasamente tab and processes Tabel 9 and Tabel 10.
+  # Attention: I need boxes here in order to call specific modules when boxes are maximized or not collapsed
   tagList(
     shinybusy::add_busy_spinner(  color = "#ff007b",    position = "bottom-right",    timeout = 200    ),
     

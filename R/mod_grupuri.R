@@ -306,7 +306,7 @@ mod_grupuri_server <- function(id, vals){
       }
       else {
         grupuri_reactive$bi_grupuri <- bi_grupuri()
-        saveRDS(object = grupuri_reactive$bi_grupuri,file = "R/reactivedata/bi_grupuri.rds")
+        saveRDS(object = grupuri_reactive$bi_grupuri,file = "R/reactivedata/grupuri/bi_grupuri.rds")
         file.copy(from = input$input_bi_grupuri$datapath,to = "R/reactivedata/grupuri/bi_grupuri.xlsx",overwrite = TRUE)
         output$mesaj_bi_grupuri <- renderText({ 
         "Baza de date a fost actualizata cu succes. Poti sa inchizi de mai sus aceste

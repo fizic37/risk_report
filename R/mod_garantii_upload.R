@@ -160,9 +160,9 @@ mod_garantii_upload_server <- function(id, vals){
         dplyr::ungroup() %>% dplyr::mutate(data_raport = input$data_upload_sold) %>%
         dplyr::bind_rows(vals$view_baza_solduri %>% dplyr::filter(data_raport != input$data_upload_sold))
       
-      saveRDS(object = vals$view_baza_solduri,file = "R/reactivedata/view_baza_sold.rds")
+      saveRDS(object = vals$view_baza_solduri,file = "R/reactivedata/solduri/view_baza_sold.rds")
       
-      saveRDS(object = vals_portof_upload$df_new_prel, file = "R/reactivedata/baza_banci.rds")
+      saveRDS(object = vals_portof_upload$df_new_prel, file = "R/reactivedata/solduri/baza_banci.rds")
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
                                .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 

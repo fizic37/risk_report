@@ -35,6 +35,9 @@ usethis::use_package("htmltools")
 usethis::use_package("rebus")
 usethis::use_package("tibble")
 usethis::use_package("tidyr")
+usethis::use_package("gfonts")
+usethis::use_package("rhandsontable")
+usethis::use_package("rmarkdown")
 
 
 

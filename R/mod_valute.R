@@ -7,10 +7,10 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' 
-#' Handles Sold garantii - tabel 2 box
 mod_valute_ui <- function(id){
   ns <- NS(id)
+  # Handles Sold garantii - tabel 2 box
+  
   tagList(
     DT::dataTableOutput(ns("tabel2")), 
     hr(),

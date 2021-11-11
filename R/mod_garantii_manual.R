@@ -73,7 +73,7 @@ mod_garantii_manual_server <- function(id, vals){
         
         vals$view_baza_solduri <- dplyr::bind_rows(df_manual(),vals$view_baza_solduri)
         
-        saveRDS(object = vals$view_baza_solduri, file = "R/reactivedata/view_baza_sold.rds")
+        saveRDS(object = vals$view_baza_solduri, file = "R/reactivedata/solduri/view_baza_sold.rds")
         
         shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
                 .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 

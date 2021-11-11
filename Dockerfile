@@ -1,5 +1,5 @@
 FROM rocker/r-ver:4.1.0
-RUN apt-get update && apt-get install -y  git-core imagemagick libcurl4-openssl-dev libgit2-dev libicu-dev libpng-dev libssl-dev libxml2-dev make pandoc pandoc-citeproc && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y  git-core imagemagick libcurl4-openssl-dev libgit2-dev libicu-dev libpng-dev libssl-dev libfontconfig1-dev libcairo2-dev libxml2-dev make pandoc pandoc-citeproc && rm -rf /var/lib/apt/lists/*
 RUN echo "options(repos = c(CRAN = 'https://cran.rstudio.com/'), download.file.method = 'libcurl', Ncpus = 4)" >> /usr/local/lib/R/etc/Rprofile.site
 RUN R -e 'install.packages("remotes")'
 RUN Rscript -e 'remotes::install_version("htmltools",upgrade="never", version = "0.5.1.1")'
@@ -15,7 +15,7 @@ RUN Rscript -e 'remotes::install_version("tidyr",upgrade="never", version = "1.1
 RUN Rscript -e 'remotes::install_version("lubridate",upgrade="never", version = "1.7.10")'
 RUN Rscript -e 'remotes::install_version("config",upgrade="never", version = "0.3.1")'
 RUN Rscript -e 'remotes::install_version("rhandsontable",upgrade="never", version = "0.3.8")'
-RUN Rscript -e 'remotes::install_version("gfonts",upgrade="never", version = "0.1.2")'
+RUN Rscript -e 'remotes::install_version("gfonts",upgrade="never", version = "0.1.3")'
 RUN Rscript -e 'remotes::install_version("rebus",upgrade="never", version = "0.1-3")'
 RUN Rscript -e 'remotes::install_version("shinyjs",upgrade="never", version = "2.0.0")'
 RUN Rscript -e 'remotes::install_version("shinybusy",upgrade="never", version = "0.2.2")'
@@ -33,6 +33,6 @@ RUN mkdir /build_zone
 ADD . /build_zone
 WORKDIR /build_zone
 RUN R -e 'remotes::install_local(upgrade="never")'
-RUN rm -rf /build_zone
+#RUN rm -rf /build_zone
 EXPOSE 80
 CMD R -e "options('shiny.port'=80,shiny.host='0.0.0.0');RiskReport::run_app()"

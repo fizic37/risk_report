@@ -98,7 +98,7 @@ mod_anexe_server <- function(id, vals){
     vals_anexe$rata_anualizata_plati <- sum(baza_plati$Plati)/sum(vals_anexe$solduri_begining_year$Sold_Garantii) * 12/
       lubridate::month(vals$report_date)
     
-   
+  
     vals_anexe$rata_platilor <- vals_anexe$solduri_begining_year %>% dplyr::group_by(Banca) %>%
       dplyr::summarise(Sold_Garantii = sum(Sold_Garantii)) %>%
       dplyr::left_join(baza_plati, by = "Banca") %>% dplyr::mutate(Plati = ifelse(is.na(Plati), 0, Plati)) %>%
@@ -133,10 +133,11 @@ mod_anexe_server <- function(id, vals){
     
     vals_anexe$resurse_proprii <- sum(vals_anexe$balanta_proprii$`Solduri finale|Debit`)
     
-   
+
     vals_anexe$anexac <-    dplyr::left_join(   x = vals_anexe$balanta_proprii %>%
           dplyr::filter(tip_plasament %in% c( "Conturi_Curente", "Gestionari_Cautiuni_Garantii","Depozite")  ) %>%  
-            dplyr::mutate(Banca = ifelse(Banca == "TREZORERIE", "UNICREDIT", Banca)) %>%
+            dplyr::mutate(Banca = ifelse(Banca == "TREZORERIE", "UNICREDIT", Banca)) %>% 
+            dplyr::mutate(Banca = as.character(Banca)) %>% 
             dplyr::left_join(tabela_nume_banci, by = c("Banca" = "CodFinantator")) %>%
             dplyr::group_by(Banca = DenumireFinantator, tip_plasament) %>%
             dplyr::summarise(Expunere = sum(`Solduri finale|Debit`)) %>% as.data.frame(),

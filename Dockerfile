@@ -32,7 +32,6 @@ RUN Rscript -e 'remotes::install_version("golem",upgrade="never", version = "0.3
 RUN mkdir /build_zone
 ADD . /build_zone
 WORKDIR /build_zone
-VOLUME /R/reactivedata
 RUN R -e 'remotes::install_local(upgrade="never")'
 #RUN rm -rf /build_zone
 EXPOSE 80

@@ -23,7 +23,7 @@ mod_provizioane_server <- function(id, vals){
     ns <- session$ns
     
     observeEvent(vals, {
-      vals$provizioane_plati <-   readRDS("R/reactivedata/volume/baza_provizioane_plati.rds") %>%
+      vals$provizioane_plati <-   readRDS("R/reactivedata/plati/external_volume/baza_provizioane_plati.rds") %>%
         dplyr::filter(data_raport %in% c(vals$report_date, vals$previous_month, vals$previous_year)) %>%
         dplyr::group_by(data_raport) %>% dplyr::summarise(
           PlatiTotale = sum(PlatiEfective),

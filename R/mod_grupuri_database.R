@@ -56,7 +56,8 @@ mod_grupuri_database_server <- function(id, vals){
  
     observeEvent(input$date_expuneri,{
       
-      solduri_provizioane <- readRDS("R/reactivedata/volume/portof_database.rds") %>% dplyr::filter(anul_de_raportare == 
+      solduri_provizioane <- readRDS("R/reactivedata/solduri/external_volume/portof_database.rds") %>% 
+        dplyr::filter(anul_de_raportare == 
             lubridate::`%m-%`(vals$report_date, months(lubridate::month(vals$report_date)%%3))) %>% 
             dplyr::group_by(`Cod Partener`) %>% dplyr::summarise(Provizion = sum(provizion_contabil, na.rm = T))
       

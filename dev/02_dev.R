@@ -71,6 +71,7 @@ golem::add_module(name = "admin")
 ## Add helper functions ----
 ## Creates fct_* and utils_*
 golem::add_fct(name = "check_error",module = "prudentialitate") 
+golem::add_fct(name = "helpers")
 golem::add_utils( "helpers" )
 
 ## External resources

@@ -12,7 +12,6 @@ app_server <- function( input, output, session ) {
   view_baza_solduri <- readRDS("R/reactivedata/solduri/view_baza_sold.rds")
   
   
-  
   vals <- reactiveValues(sidebar_selected = sidebar_selected, view_baza_solduri = view_baza_solduri,
                          raport_selected_tab = raport_selected_tab,box_selected=box_selected)
   
@@ -50,6 +49,11 @@ app_server <- function( input, output, session ) {
       mod_admin_server("admin_ui_1", vals)
       
       vals$sidebar_selected <- c(vals$sidebar_selected,"admin") }
+    
+    if (sum("bnr" == vals$sidebar_selected)==1) {
+      callModule(mod_raportare_bnr_server, "raportare_bnr_ui_1")
+      
+      vals$sidebar_selected <- c(vals$sidebar_selected,"bnr") }
     
     } )
   

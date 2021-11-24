@@ -60,17 +60,17 @@ mod_plati_ui <- function(id){
     bs4Dash::box(title='Upload excel file for Cereri de plata', collapsible = T,
                  collapsed = T, maximizable = T, width = 6,icon=icon("file-excel"),
                  footer = "Se downloadeaza fisierul excel din link-ul atasat, se actualizeaza coloanele DocumentId, 
-                 Data_cerere_plata si cerere_plata se salveaza local si se uploadeaza folosind butonul de mai sus",
+                 Cod Partener, Data_cerere_plata si cerere_plata se salveaza local si se uploadeaza folosind butonul de mai sus",
                  
-                 column(width = 3, fileInput(ns("cereri_plata_upload"),"Upload cereri plata file",
+                 column(width = 4, fileInput(ns("cereri_plata_upload"),"Upload cereri plata file",
                                              accept = ".xlsx",buttonLabel = "Excel only",
                                              placeholder = "Nothing uploaded") ),
                  
                  column(width = 2, br(), textOutput(outputId = ns("cereri_plata_messages"))),
                  
-                 column(width = 7, br(), div(style="display:inline-block;margin-left: 40%;padding-bottom: 10px;", 
+                 column(width = 6, br(), #div(style="display:inline-block;margin-left: 20%;padding-bottom: 10px;", 
                               downloadLink(outputId = ns("cereri_plata_link"),
-                                  label = "Click aici pentru a downloada modelul de fisier cereri plata")) ),
+                                  label = "Click aici pentru a downloada modelul de fisier cereri plata")) ,
                  
                  column(width = 8, DT::dataTableOutput(ns("sinteza_upload_cereri_plata"))),
                  column(width = 4),
@@ -106,7 +106,8 @@ mod_plati_server <- function(id, vals){
     observeEvent(input$cereri_plata_upload,{
       tryCatch(expr = {
       vals_plati$cereri_plata_read <- readxl::read_excel(input$cereri_plata_upload$datapath) %>% 
-        dplyr::select(DocumentId,Data_cerere_plata,Cerere_Plata)
+        dplyr::select( DocumentId,`Cod Partener`, Data_cerere_plata, Cerere_Plata ) %>% 
+        dplyr::mutate(Data_cerere_plata = as.Date.POSIXct(Data_cerere_plata))
       if (janitor::compare_df_cols_same(vals_plati$cereri_plata_read, cereri_plata_database)) {
         saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/cereri_plata.rds")
         file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx")

@@ -232,12 +232,18 @@ flextable::flextable(data = params$tabel9 %>% dplyr::mutate(Pondere_Surse_Propri
 *Tabelul 10 – Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM *  
 
 ```{r}
+
+tryCatch(expr = {
 flextable::flextable(data = params$tabel10 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Pondere"),
-      .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% 
- flextable::colformat_double(j = 3:5, suffix = "%",digits = 1) %>%
-  flextable::theme_vanilla() %>% flextable::width(j = 1,width = 2,unit = "in") %>% flextable::width(j = 2:5,width = 1.05,unit = "in")
-pondere_obligatiuni <- params$tabel10 %>% dplyr::filter(tip_plasament=="obligatiuni_corporative") %>% dplyr::pull(3)
-respectare_limite_banci <- all(params$anexaB$Grad_Utilizare_Plafon <= 1, na.rm = TRUE)
+      .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>%  
+    flextable::colformat_double(j = 3:5, suffix = "%",digits = 1) %>%
+     flextable::theme_vanilla() %>% flextable::width(j = 1,width = 2,unit = "in") %>% flextable::width(j = 2:5,width = 1.05,unit = "in") }, error = function(e) matrix("Check Tabel 10 in plasamente",nrow = 1,ncol = 5) %>% data.frame() %>% flextable::flextable(data = .) )
+ 
+ 
+
+pondere_obligatiuni <- params$tabel10 %>% dplyr::filter(tip_plasament=="obligatiuni_corporative") %>% dplyr::pull(3) 
+
+respectare_limite_banci <-  all(params$anexaB$Grad_Utilizare_Plafon <= 1, na.rm = TRUE)
 
 ```
 

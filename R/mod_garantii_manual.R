@@ -9,9 +9,7 @@
 #' @importFrom shiny NS tagList 
 mod_garantii_manual_ui <- function(id){
   ns <- NS(id)
-  bs4Dash::box(title = "Completeaza manual garantiile de stat", width = 12, id = ns("box_manual_solduri"),
-               icon = icon("keyboard"), collapsible = T,collapsed = T, maximizable = T,
-               footer = "Atentie, nu sunt disponibile pentru a fi selectate decat datele soldurilor uploadate anterior.",
+  
   fluidPage(br(),
   fluidRow(
     hr(),
@@ -37,8 +35,9 @@ mod_garantii_manual_ui <- function(id){
            column(width = 3, shinyWidgets::autonumericInput(inputId = ns("sold_credit_input"),
                                   label = "Soldul creditelor, lei", value = 0,align = "right",
                                   digitGroupSeparator = ",",decimalPlaces = 2,minimumValue = 0,decimalCharacter = "."))
-  )  )  
   )
+  )  
+  
 }
     
 #' garantii_manual Server Functions

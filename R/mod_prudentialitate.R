@@ -36,7 +36,10 @@ mod_prudentialitate_ui <- function(id){
                    icon = icon("file-upload"), collapsible = T,collapsed = T, maximizable = T,
                    mod_garantii_upload_ui("garantii_upload_ui_1")),
       
-      mod_garantii_manual_ui("garantii_manual_ui_1"),  
+      bs4Dash::box(title = "Completeaza manual garantiile de stat", width = 12, id = ns("box_manual_solduri"),
+                   icon = icon("keyboard"), collapsible = T,collapsed = T, maximizable = T,
+                   footer = "Atentie, nu sunt disponibile pentru a fi selectate decat datele soldurilor uploadate anterior.",
+      mod_garantii_manual_ui("garantii_manual_ui_1") ),  
       
       bs4Dash::box(title = "Tabel 1 - Evolutia soldurilor de garantii",status = "primary",
                    icon = icon("chart-bar"),collapsible = T,collapsed = T, width = 12,maximizable = T,

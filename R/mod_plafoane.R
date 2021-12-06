@@ -42,7 +42,7 @@ mod_plafoane_ui <- function(id,vals){
                                        decimalCharacter = "."  ),
         
         shinyWidgets::actionBttn(inputId = ns("save_plafoane"),icon = icon("save"),color = "primary",
-                                 label = "Salveaza datele de mai sus") ),
+                                 label = "Salveaza datele de mai sus",style = "stretch") ),
         column(width = 6, DT::dataTableOutput(ns("baza_surse_proprii")), hr(),
                DT::dataTableOutput(ns("baza_surse_administrare")))
       ) ) ),
@@ -178,7 +178,12 @@ mod_plafoane_server <- function(id, vals){
     
     # Observer to update data plafoane to vals$report_date and disable save plafoane
     observeEvent(vals$report_date,{
-    shinyWidgets::updateAirDateInput(session = session,inputId = "plafoane_date", value=vals$report_date) 
+      shinyWidgets::updateAirDateInput(session = session,inputId = "plafoane_date",value = vals$report_date)
+    })
+    
+    # Observer for generating vals_plafoane$plafoane_date which is used later.
+    observeEvent(input$plafoane_date,{
+      vals_plafoane$plafoane_date <- lubridate::`%m+%`(input$plafoane_date,months(1) ) -1
       shinyjs::disable(id = "save_plafoane", asis = FALSE)
       # The options to disable plafoane date might not be a bad idea, but it will not allow to update old plafoane
       #shinyjs::disable(id = "plafoane_date", asis = FALSE)
@@ -196,15 +201,16 @@ mod_plafoane_server <- function(id, vals){
       
      vals_plafoane$df_new <- data.frame(Cap_proprii = as.numeric(input$cap_proprii),
             Impr_subordon = as.numeric(input$impr_subordon), Fonduri_proprii = as.numeric(input$fonduri_proprii),
-            data_raport = input$plafoane_date,
+            data_raport =  vals_plafoane$plafoane_date,
             OG_79 = as.numeric(input$oug_79),OUG_43 = as.numeric(input$oug_43),
             LG_329 = as.numeric(input$lg_329),LG_218 = as.numeric(input$lg_218))
       
       vals_plafoane$df_old <- baza_plafoane
-      vals_plafoane$element_id <- input$plafoane_date #%>% lubridate::round_date(unit = "bimonth")-1
+      vals_plafoane$element_id <-  vals_plafoane$plafoane_date
       vals_plafoane$column_id = "data_raport"
       vals_plafoane$finalise_process_compare_df = FALSE
       
+     
       callModule(mod_compare_df_server, "compare_df_ui_1", df_reactive = vals_plafoane, red="#ff007b",green="#00ff84") 
      
        

@@ -23,7 +23,7 @@ mod_final_report_ui <- function(id){
   
  hr(),
  
-  lapply(X = c("3si4","baza_date_grupuri","provizioane_plati",9,10,11, "anexe"), function(s) {
+  lapply(X = c("3si4","baza_date_grupuri","provizioane_plati","9si10",11, "anexe"), function(s) {
    
      shinyWidgets::awesomeRadio(
       inputId = ns(paste0("tabel",s)),
@@ -45,11 +45,35 @@ mod_final_report_server <- function(id,vals){
     ns <- session$ns
     shinyjs::disable(id = "action_report")
     
-    lapply(X = c("3si4","baza_date_grupuri","provizioane_plati",9,10,11, 'anexe'), function(s) {
-      shinyjs::disable(id = paste0("tabel",s)) })
+#lapply(X = c("3si4", "baza_date_grupuri", "provizioane_plati",9,10,11, 'anexe'), function(s) { # shinyjs::disable(id = paste0("tabel",s)) })
     
-    observeEvent(vals,{
-     
+    observeEvent( input$tabel3si4,{ req(input$tabel3si4 == "Checked")
+      vals$final_report_check <- "plafoane"
+          })
+    
+    observeEvent( input$tabelbaza_date_grupuri,{ req(input$tabelbaza_date_grupuri == "Checked")
+      vals$final_report_check <- "grupuri"
+      
+    })
+   
+    observeEvent( input$tabelprovizioane_plati,{ req(input$tabelprovizioane_plati == "Checked")
+      vals$final_report_check <- "provizioane_plati" 
+    })
+    
+    observeEvent( input$tabel9si10,{ req(input$tabel9si10 == "Checked")
+      vals$final_report_check <- "plasamente"
+      })
+    
+    observeEvent( input$tabel11,{ req(input$tabel11 == "Checked")
+      vals$final_report_check <- "plati"
+    })
+    
+    observeEvent( input$tabelanexe,{ req(input$tabelanexe == "Checked")
+      vals$final_report_check <- "anexe"
+    })
+    
+   # If vals$tables are not checked above, they can be loaded automatically with below observer.
+   observe({
     
     if (!is.null(vals$tabel4)) (shinyWidgets::updateAwesomeRadio(session = session,inputId = "tabel3si4",
                                                                  selected = "Checked",status = "successs"))
@@ -60,22 +84,22 @@ mod_final_report_server <- function(id,vals){
     if (!is.null(vals$provizioane_plati)) (shinyWidgets::updateAwesomeRadio(session = session,inputId = "tabelprovizioane_plati",
                                                                   selected = "Checked",status = "successs"))
     
-    if (!is.null(vals$tabel9)) (shinyWidgets::updateAwesomeRadio(session = session,inputId = "tabel9",
-                                                                 selected = "Checked",status = "successs"))
-    
-    if (!is.null(vals$tabel10)) (shinyWidgets::updateAwesomeRadio(session = session,inputId = "tabel10",
+    if (!is.null(vals$tabel10)) (shinyWidgets::updateAwesomeRadio(session = session,inputId = "tabel9si10",
                                                                  selected = "Checked",status = "successs"))
     
     if (!is.null(vals$tabel11)) (shinyWidgets::updateAwesomeRadio(session = session,inputId = "tabel11",
                                                                  selected = "Checked",status = "successs"))
       
-      if (all(!is.null(vals$anexa_A),!is.null(vals$anexaC_final))) (shinyWidgets::updateAwesomeRadio(session = session,
+    if (all(!is.null(vals$anexa_A),!is.null(vals$anexaC_final))) (shinyWidgets::updateAwesomeRadio(session = session,
                                       inputId = "tabelanexe", selected = "Checked",status = "successs"))  
     
     if ( all(!is.null(vals$tabel4),!is.null(vals$grupuri),!is.null(vals$provizioane_plati),!is.null(vals$tabel9),
             !is.null(vals$tabel10),!is.null(vals$tabel11) , !is.null(vals$anexa_A),
              !is.null(vals$anexaC_final) ) ) shinyjs::enable(id = "action_report")
+   
     })
+   
+   #observeEvent(vals,{browser()})
       
     observeEvent(input$action_report,{
       

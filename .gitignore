@@ -2,3 +2,4 @@ R/reactivedata/
 *.docx
 inst/extdata/
 .Rproj.user
+.Rhistory

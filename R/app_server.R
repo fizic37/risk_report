@@ -8,13 +8,15 @@ app_server <- function( input, output, session ) {
   sidebar_selected <- c()
   box_selected <- c()
   raport_selected_tab <- "Cap I - Garantii"
+  final_report_check <- c()
     
   view_baza_solduri <- readRDS("R/reactivedata/solduri/view_baza_sold.rds")
   
   
   
   vals <- reactiveValues(sidebar_selected = sidebar_selected, view_baza_solduri = view_baza_solduri,
-                         raport_selected_tab = raport_selected_tab,box_selected=box_selected)
+                         raport_selected_tab = raport_selected_tab,box_selected=box_selected,
+                         final_report_check = final_report_check)
   
   
   observeEvent(vals$report_date,{
@@ -80,35 +82,49 @@ app_server <- function( input, output, session ) {
       
   })
   
-  observeEvent(vals$raport_selected_tab,{
+  #observeEvent(vals$raport_selected_tab,{
+  observe({
   
-  if ( sum("provizioane_plati" == vals$raport_selected_tab)==1 ) {
+  if ( sum("provizioane_plati" == vals$final_report_check)==1 || sum("provizioane_plati" == vals$raport_selected_tab)==1 ) {
     mod_provizioane_server("provizioane_ui_1", vals) 
     vals$raport_selected_tab <- c(vals$raport_selected_tab, 'provizioane_plati')
+    vals$final_report_check <- c(vals$final_report_check, "provizioane_plati")
   }
    
-  if ( sum("grupuri" == vals$raport_selected_tab)==1 ) {
+  if ( sum("grupuri" == vals$final_report_check)==1 || sum("grupuri" == vals$raport_selected_tab)==1 ) {
     mod_grupuri_database_server("grupuri_database_ui_1", vals)
     mod_grupuri_server("grupuri_ui_1", vals) 
-    vals$raport_selected_tab <- c(vals$raport_selected_tab, 'grupuri')  }
+    vals$raport_selected_tab <- c(vals$raport_selected_tab, 'grupuri')
+    vals$final_report_check <- c(vals$final_report_check, "grupuri")
+    }
      
     
-    if ( sum("plafoane" == vals$raport_selected_tab)==1 ) { 
+    if ( sum("plafoane" == vals$final_report_check) == 1 || sum("plafoane" == vals$raport_selected_tab)==1 ) { 
       mod_plafoane_server("plafoane_ui_1", vals)
-      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'plafoane') }
+      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'plafoane')
+      vals$final_report_check <- c(vals$final_report_check, "plafoane")
+      }
        
   
-    if ( sum("plasamente" == vals$raport_selected_tab)==1 )  { mod_plasamente_server("plasamente_ui_1", vals)
-     
-      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'plasamente') }
+    if ( sum("plasamente" == vals$final_report_check) == 1 || sum("plasamente" == vals$raport_selected_tab)==1 )  { 
+      mod_plasamente_server("plasamente_ui_1", vals)
+      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'plasamente')
+      vals$final_report_check <- c(vals$final_report_check, "plasamente")
+      }
     
     
-    if ( sum("plati" == vals$raport_selected_tab)==1 ) { mod_plati_server("plati_ui_1", vals)
-      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'plati') }
+    if ( sum("plati" == vals$final_report_check) == 1 || sum("plati" == vals$raport_selected_tab)==1 ) { 
+      mod_plati_server("plati_ui_1", vals)
+      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'plati') 
+      vals$final_report_check <- c(vals$final_report_check, "plati")
+      }
     
-    if ( sum("anexe" == vals$raport_selected_tab)==1 ) { mod_anexe_server("anexe_ui_1", vals)
+    if ( sum("anexe" == vals$final_report_check) == 1 || sum("anexe" == vals$raport_selected_tab)==1 ) { 
+      mod_anexe_server("anexe_ui_1", vals)
       
-      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'anexe') }
+      vals$raport_selected_tab <- c(vals$raport_selected_tab, 'anexe') 
+      vals$final_report_check <- c(vals$final_report_check, "anexe")
+      }
     
     
     if ( sum("final_report" == vals$raport_selected_tab)==1 ) {  

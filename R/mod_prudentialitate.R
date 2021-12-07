@@ -22,7 +22,7 @@ mod_prudentialitate_ui <- function(id){
                    footer = "Doar de aici se va selecta luna raportului de prudentialitate",
                    collapsible = T,collapsed = F,icon = icon("calendar"), maximizable = T,
                    column(width = 3,
-                   shinyWidgets::airMonthpickerInput(inputId = ns("data_prudentialitate"),
+                   shinyWidgets::airMonthpickerInput(inputId = ns("data_prudentialitate"), autoClose=TRUE,
                           label = "Data raportului de prudentialitate",value =  ifelse( lubridate::day(Sys.Date()) <= 10,
                           lubridate::`%m-%`(Sys.Date(), months(2)) %>% lubridate::floor_date(unit = "month"),
                           lubridate::`%m-%`(Sys.Date(), months(1)) %>% lubridate::floor_date(unit = "month")  ) %>% 

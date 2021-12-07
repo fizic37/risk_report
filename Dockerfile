@@ -27,6 +27,7 @@ RUN Rscript -e 'remotes::install_version("kableExtra",upgrade="never", version =
 RUN Rscript -e 'remotes::install_version("janitor",upgrade="never", version = "2.1.0")'
 RUN Rscript -e 'remotes::install_version("formattable",upgrade="never", version = "0.2.1")'
 RUN Rscript -e 'remotes::install_version("DT",upgrade="never", version = "0.19")'
+RUN Rscript -e 'remotes::install_version("flextable",upgrade="never", version = "0.6.9")'
 RUN Rscript -e 'remotes::install_version("bs4Dash",upgrade="never", version = "2.0.1")'
 RUN Rscript -e 'remotes::install_version("golem",upgrade="never", version = "0.3.1")'
 RUN mkdir /build_zone

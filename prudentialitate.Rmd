@@ -27,6 +27,7 @@ params:
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE,size = "large")
 flextable::set_flextable_defaults(digits = 0, big.mark = ",",font.family = "times")
+library(magrittr)
 
 ```
 

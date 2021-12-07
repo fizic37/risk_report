@@ -42,8 +42,13 @@ mod_plafoane_ui <- function(id,vals){
         
         shinyWidgets::actionBttn(inputId = ns("save_plafoane"),icon = icon("save"),color = "primary",
                                  label = "Salveaza datele de mai sus",style = "stretch") ),
-        column(width = 8, DT::dataTableOutput(ns("baza_surse_proprii")), hr(),
-               DT::dataTableOutput(ns("baza_surse_administrare")))
+        
+        column( width = 8, DT::dataTableOutput(ns("baza_surse_proprii")),
+                tags$script(src = "inst/app/www/plafoane_buttons.js"),
+                tags$script(paste0("plafoane_module_js('", ns(''), "')")),
+                hr(),
+               DT::dataTableOutput(ns("baza_surse_administrare")),
+                )
       ) ) ),
   bs4Dash::box(title = "Tabelurile 3 si 4 ale Raportului de Prudentialitate",
                icon = icon("table"),width = 12, maximizable = TRUE,
@@ -65,12 +70,38 @@ mod_plafoane_server <- function(id, vals){
     
     vals_plafoane <- reactiveValues(baza_plafoane = baza_plafoane)
     
-    # Outputs baza de date a fondurilor proprii (to thw right of the page)
-    output$baza_surse_proprii <- DT::renderDataTable( { DT::datatable(data = vals_plafoane$baza_plafoane %>% 
-                        dplyr::select(1:4),     rownames = F,extensions = "Buttons",
-          caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
-              "Baza de date a Fondurilor Proprii:"),
-          options = list(dom = "Bt", buttons = c("copy","csv","excel"))) %>% DT::formatRound(columns = 1:3,digits = 0) })
+    observeEvent(vals_plafoane$baza_plafoane,{
+    
+    vals_plafoane$actions <- purrr::map_chr(vals_plafoane$baza_plafoane$data_raport, function(id_) {
+      paste0(
+        '<button class="btn btn-danger btn-sm delete_btn" data-toggle="tooltip" data-placement="top" title="Delete" id = ',
+        id_, ' style="margin: 0"><i class="fa fa-trash-o"></i></button>'
+      )  })
+    
+    })
+    
+    observeEvent( input$data_raport_to_delete,{
+      shinyWidgets::ask_confirmation(inputId = ns("confirm_delete"),title = "CONFIRM",
+          text = paste0("Esti sigur ca vrei sa stergi inregistrarile din data de ",input$data_raport_to_delete," ?",
+                      " Vor fi sterse si sursele in administrare."),
+          btn_labels = c("NU, renunta","OK, sterge"),btn_colors = c("#ff007b","#00ff84"), type = "info") } )
+    
+    observeEvent(input$confirm_delete, {req(input$confirm_delete == TRUE) 
+      vals_plafoane$baza_plafoane <- vals_plafoane$baza_plafoane %>% 
+        dplyr::filter(data_raport != input$data_raport_to_delete)
+      
+      saveRDS(object = vals_plafoane$baza_plafoane, "R/reactivedata/solduri/baza_plafoane.rds" )
+      
+      })
+    
+    # Outputs baza de date a fondurilor proprii (to the right of the page)
+    output$baza_surse_proprii <- DT::renderDataTable({
+        DT::datatable(
+        data =  cbind(tibble::tibble(" " = vals_plafoane$actions),vals_plafoane$baza_plafoane  %>% 
+                        dplyr::select(1:4) ),     rownames = F,extensions = "Buttons", escape = FALSE,
+        caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+                                          "Baza de date a Fondurilor Proprii:"),
+        options = list(dom = "Btp", buttons = c("copy","csv","excel"))) %>% DT::formatRound(columns = 2:4,digits = 0) })
    
     
     # Outputs baza de date a plafoanelor din surse administrare (to the right of the page)
@@ -79,7 +110,7 @@ mod_plafoane_server <- function(id, vals){
           rownames = F, extensions = "Buttons",
           caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
             "Baza de date a Surselor in Administrare:"),
-          options = list(dom = "Bt", buttons = c("copy", "csv", "excel")) ) %>% DT::formatRound(columns = 2:5, digits = 0)
+          options = list(dom = "Btp", buttons = c("copy", "csv", "excel")) ) %>% DT::formatRound(columns = 2:5, digits = 0)
     })
     
     # Main processing observer. It assembles main tables depending on report date, previous month, previous year
@@ -183,13 +214,13 @@ mod_plafoane_server <- function(id, vals){
     # Observer for generating vals_plafoane$plafoane_date which is used later.
     observeEvent(input$plafoane_date,{
       vals_plafoane$plafoane_date <- lubridate::`%m+%`(input$plafoane_date,months(1) ) -1
-      shinyjs::disable(id = "save_plafoane", asis = FALSE)     })
+      #shinyjs::disable(id = "save_plafoane", asis = FALSE)     
+      })
     
     # Observer for activating save button when all inputs are greater than zero
-    observe({req(input$cap_proprii > 0, input$impr_subordon > 0,input$fonduri_proprii > 0, input$oug_79 > 0,
-              input$oug_43 > 0,input$lg_329 > 0,input$lg_218 > 0)
-      shinyjs::enable(id = "save_plafoane", asis = FALSE)
-    })
+    #observe({req(input$cap_proprii > 0, input$impr_subordon > 0,input$fonduri_proprii > 0, input$oug_79 > 0,
+      #        input$oug_43 > 0,input$lg_329 > 0,input$lg_218 > 0)
+     # shinyjs::enable(id = "save_plafoane", asis = FALSE) })
     
     # Standard observer when calling compare_df module
     observeEvent(input$save_plafoane,{

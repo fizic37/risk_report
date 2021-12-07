@@ -15,10 +15,9 @@ mod_plafoane_ui <- function(id,vals){
                status = "primary",collapsible = TRUE,collapsed = TRUE,
   fluidPage( shinyFeedback::useShinyFeedback(),
         fluidRow(
-        column(width = 6,
-        fluidRow(
-        shinyWidgets::airMonthpickerInput(inputId = ns("plafoane_date") ,
-        label = "Data plafoanelor",value = Sys.Date()) ),
+        column(width = 4,
+        uiOutput(ns("show_plafoane_date")),
+       
         shinyWidgets::autonumericInput(inputId = ns("cap_proprii"),label = "Capitaluri proprii",value = 0,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
                                        decimalCharacter = "."  ),
@@ -43,7 +42,7 @@ mod_plafoane_ui <- function(id,vals){
         
         shinyWidgets::actionBttn(inputId = ns("save_plafoane"),icon = icon("save"),color = "primary",
                                  label = "Salveaza datele de mai sus",style = "stretch") ),
-        column(width = 6, DT::dataTableOutput(ns("baza_surse_proprii")), hr(),
+        column(width = 8, DT::dataTableOutput(ns("baza_surse_proprii")), hr(),
                DT::dataTableOutput(ns("baza_surse_administrare")))
       ) ) ),
   bs4Dash::box(title = "Tabelurile 3 si 4 ale Raportului de Prudentialitate",
@@ -176,19 +175,15 @@ mod_plafoane_server <- function(id, vals){
       
     } )
     
-    # Observer to update data plafoane to vals$report_date and disable save plafoane
-    observeEvent(vals$report_date,{
-      shinyWidgets::updateAirDateInput(session = session,inputId = "plafoane_date",value = vals$report_date)
-    })
+    # Observer to update data plafoane to vals$report_date 
+    output$show_plafoane_date  <- renderUI({ req(vals$report_date) 
+      shinyWidgets::airMonthpickerInput(inputId = ns("plafoane_date") ,autoClose=TRUE,
+      label = "Data plafoanelor", value = lubridate::`%m-%`(vals$report_date,months(1) ) + 1) })
     
     # Observer for generating vals_plafoane$plafoane_date which is used later.
     observeEvent(input$plafoane_date,{
       vals_plafoane$plafoane_date <- lubridate::`%m+%`(input$plafoane_date,months(1) ) -1
-      shinyjs::disable(id = "save_plafoane", asis = FALSE)
-      # The options to disable plafoane date might not be a bad idea, but it will not allow to update old plafoane
-      #shinyjs::disable(id = "plafoane_date", asis = FALSE)
-      #vals$report_date <- input$plafoane_date #%>% lubridate::round_date(unit = "bimonth")-1
-      })
+      shinyjs::disable(id = "save_plafoane", asis = FALSE)     })
     
     # Observer for activating save button when all inputs are greater than zero
     observe({req(input$cap_proprii > 0, input$impr_subordon > 0,input$fonduri_proprii > 0, input$oug_79 > 0,

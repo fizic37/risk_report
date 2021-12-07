@@ -103,7 +103,7 @@ mod_grupuri_server <- function(id, vals){
         
         finantari_grupuri <- readRDS("R/reactivedata/grupuri/finantari_grupuri.rds") 
         
-        baza_solduri <- readRDS("R/reactivedata/baza_banci.rds")
+        baza_solduri <- readRDS("R/reactivedata/solduri/baza_banci.rds")
         
         grupuri_reactive$filtered_data <- dplyr::filter(.data = grupuri_reactive$fisier_prelucrat,
             grupuri_reactive$fisier_prelucrat$data_constituire_grup <= input$data_grupuri) %>% 
@@ -151,7 +151,7 @@ mod_grupuri_server <- function(id, vals){
                     width = "250px", label_on = "Hide table below",
                     label_off = "Show grupurile constituite",
                   shape = "square",status_on = "success", status_off = "info",
-                  icon_on = icon("wye-slash"), icon_off = icon("table"), value = FALSE) ),
+                  icon_on = icon("wye-slash"), icon_off = icon("table"), value = TRUE) ),
             
             column(width = 3, shinyWidgets::prettyToggle(inputId = session$ns("show_grupuri_NEconstituite"), 
                     width = "250px", label_on = "Hide table below",
@@ -204,7 +204,7 @@ mod_grupuri_server <- function(id, vals){
           })
           
        
-        output$grupuri_detaliate <- DT::renderDataTable({ 
+        output$grupuri_detaliate <- DT::renderDataTable({ req(input$show_grupuri_constituite)
           
           if (input$show_grupuri_constituite == TRUE) {
           DT::datatable(

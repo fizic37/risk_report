@@ -15,7 +15,7 @@ mod_final_report_ui <- function(id){
     shinyjs::useShinyjs(),
   fluidRow(column(width = 8,
   h5("Aici se genereaza fisierul word continand raportul de prudentialitate.
-     Atentie, pentru a se putea genera, va trebui sa vizualizezi tabelele de mai jos.")),
+     Atentie, pentru a se putea genera, va trebui sa vizualizezi tabelele de mai jos sau sa bifezi Checked pentru a le calcula.")),
   column(width = 4,
   shinyWidgets::actionBttn(inputId = ns("action_report"),label = "Genereaza raportul de prudentialitate",
                            icon = icon("file-word"),style = "stretch",color = "primary")

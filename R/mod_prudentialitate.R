@@ -99,22 +99,22 @@ mod_prudentialitate_server <- function(id, vals){
     #  server is called.The module server is called once the box is maximized or opened (with plus sign). 
     
     observeEvent(input$box_tabel2, {req(any(input$box_tabel2$collapsed==FALSE, input$box_tabel2$maximized==TRUE))
-      vals$box_selected <- c(vals$box_selected,"box_tabel2")
+      vals$box_selected <-"box_tabel2"
       })
     
     observeEvent(input$box_database_solduri, {req(any(input$box_database_solduri$collapsed==FALSE,
                                                       input$box_database_solduri$maximized==TRUE))
-      vals$box_selected <- c(vals$box_selected,"box_database_solduri")
+      vals$box_selected <- "box_database_solduri"
     })
     
     observeEvent(input$box_upload_solduri, {req( any(input$box_upload_solduri$collapsed==FALSE,
                                                      input$box_upload_solduri$maximized==TRUE) )
-      vals$box_selected <- c(vals$box_selected,"box_upload_solduri")
+      vals$box_selected <- "box_upload_solduri"
     })
     
     observeEvent(input$box_manual_solduri, {req( any(input$box_manual_solduri$collapsed==FALSE, 
                                                      input$box_manual_solduri$maximized == TRUE) )
-      vals$box_selected <- c(vals$box_selected,"box_manual_solduri")
+      vals$box_selected <- "box_manual_solduri"
     })
    
     

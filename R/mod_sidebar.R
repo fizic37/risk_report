@@ -10,7 +10,8 @@
 mod_sidebar_ui <- function(id){
   ns <- NS(id)
   
-  bs4Dash::sidebarMenuOutput(outputId = ns("sidebar"))
+  
+  bs4Dash::sidebarMenuOutput(outputId = ns("sidebar")) 
   
 }
     
@@ -36,10 +37,11 @@ mod_sidebar_server <- function(id, vals) {
         bs4Dash::menuItem(
           text = "Raport prudentialitate",
           tabName = "prudentialitate",
-          selected = T,
+          selected = TRUE,
           icon = icon("product-hunt")  )   ,
       hr(),
-      bs4Dash::menuItem(
+      
+     bs4Dash::menuItem(
         tabName = "banci",
         text = "Banci - Clasa de Risc",
         icon = icon("university"),
@@ -53,7 +55,7 @@ mod_sidebar_server <- function(id, vals) {
         #,bs4Dash::menuSubItem(text = "Genereaza rating nou ",tabName = "new_rating", selected = F,icon = icon("folder-plus")  )
         ),
       hr(),
-      bs4Dash::menuItem(text = "Admin",icon = icon("toolbox"),tabName = "admin",selected = F)
+      bs4Dash::menuItem(text = "Admin",icon = icon("toolbox"),tabName = "admin",selected = FALSE)
       
      )
         
@@ -61,7 +63,7 @@ mod_sidebar_server <- function(id, vals) {
   
   output$sidebar <- bs4Dash::renderMenu(risk_user)
   
-
+  
   observeEvent(input$tabs,{ 
     # I use this in order to have a selection of all inputs in sidebar. This way, I don`t have to call modules
     # every time a sidebar is selected, I only call modules ones.`

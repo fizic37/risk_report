@@ -13,10 +13,17 @@ mod_admin_ui <- function(id){
   shiny::tabPanel(title = "Banci",value = "banci", icon = icon("university"), 
                   shinyFeedback::useShinyFeedback(),
       tagList( br(),
-            bs4Dash::box(title = "Gestiune fuziuni banci",status = "primary",collapsible = T,collapsed = T,maximizable = T,
-                         footer = "Click pe o banca din tabel si editeaza data si noul finantator cu care a fuzionat",width = 12,
-                  tagList(  DT::dataTableOutput(ns("lista_banci")))
-  )
+            bs4Dash::box( title = "Fuziuni banci",status = "primary",collapsible = T,collapsed = T,maximizable = T,
+                         footer = "Click pe o banca din tabel si editeaza data si noul finantator cu care a fuzionat",
+                         width = 12, icon = icon("object-ungroup"),
+                  tagList(  DT::dataTableOutput(ns("lista_banci")))    ),
+            
+            bs4Dash::box( title = "Conturi contabile - corespondenta banci",status = "primary",collapsible = T,collapsed = T,
+                          maximizable = T,  width = 12, icon = icon("hand-point-right"),
+                          fluidRow(column(width = 6,
+                          DT::dataTableOutput(ns("conturi_curente"))),
+                          column(width = 6, DT::dataTableOutput(ns("conturi_depozite"))) ) )
+            
   )
   )
   )
@@ -31,7 +38,23 @@ mod_admin_server <- function(id, vals){
     
     tabela_nume_banci <- readRDS(file = "R/reactivedata/banci/tabela_nume_banci.rds")
     
-    vals_admin <- reactiveValues(tabela_nume_banci = tabela_nume_banci)
+    conturi_curente <- readRDS(file = "R/reactivedata/balanta/coresp_banci_curente.rds")
+    
+    conturi_depozite <- readRDS(file = "R/reactivedata/balanta/coresp_banci_depozite.rds") %>%
+        dplyr::filter(Banca != "")
+    
+    vals_admin <- reactiveValues(tabela_nume_banci = tabela_nume_banci, conturi_curente = conturi_curente,
+                                 conturi_depozite = conturi_depozite )
+    
+    updateTabsetPanel(session = session, inputId = 'admin',selected = "banci")
+    
+   
+    output$conturi_curente <- DT::renderDataTable(
+     DT::datatable(data = vals_admin$conturi_curente, rownames = FALSE, caption = "Conturi curente:",
+                   options = list(dom = "tp")) )
+    
+    output$conturi_depozite <- DT::renderDataTable( DT::datatable(data = vals_admin$conturi_depozite,rownames = FALSE,
+              caption = "Conturi depozite", options = list(dom = "tp")))
     
     observeEvent(input$admin,{ vals$admin_selected_tab <- input$admin  } )
     

@@ -42,13 +42,15 @@ mod_balanta_database_server <- function(id){
     
     vals_balanta_database <- reactiveValues(balanta_database = balanta_database)
    
+    observeEvent(vals_balanta_database$balanta_database,{
     updateSelectInput(session = session,inputId = 'date_baza_balanta',
-                      choices = unique(balanta_database$data_balanta) %>% sort(decreasing = TRUE))
+                      choices = unique(vals_balanta_database$balanta_database$data_balanta) %>% sort(decreasing = TRUE))
     updateSelectInput(session = session,inputId = "tip_sursa", 
-                      choices = c("all",unique(balanta_database$tip_sursa)))
+                      choices = c("all",unique(vals_balanta_database$balanta_database$tip_sursa)))
     updateSelectInput(session = session,inputId = "tip_plasament",
-                      choices = c("all",unique(balanta_database$tip_plasament)))
-    
+                      choices = c("all",unique(vals_balanta_database$balanta_database$tip_plasament)))
+    } )
+   
     tabela_nume_banci <- eventReactive(input$date_baza_balanta, { req(input$date_baza_balanta != "")
       readRDS("R/reactivedata/banci/tabela_nume_banci.rds") %>% 
       dplyr::filter(DataInitiala <= input$date_baza_balanta & DataExpirare >= input$date_baza_balanta) %>% dplyr::select(2:3)

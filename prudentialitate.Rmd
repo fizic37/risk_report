@@ -86,7 +86,7 @@ flextable::flextable(data = params$tabel1 %>% dplyr::mutate(dplyr::across(.cols 
 ```{r}
 flextable::flextable(data = params$tabel2 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Variat"),
     ~ .x * 100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% 
-  flextable::colformat_double(j = 3:4, suffix = "%") %>%
+  flextable::colformat_double(j = 3:4, suffix = "%") %>% flextable::colformat_double(j = 2, digits = 0) %>%
   flextable::theme_vanilla() %>% flextable::width(j = 1,width = 1.1,unit = "in") %>% flextable::width(j = 2,width = 1.2,unit = "in") %>% flextable::width(j = 2:4,width = 1.8,unit = "in") 
 
 ```
@@ -102,8 +102,8 @@ flextable::flextable(data = params$tabel2 %>% dplyr::mutate(dplyr::across(.cols 
   
 ```{r, echo=FALSE}
 flextable::flextable(data = params$tabel3 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Utilizare"),
-    ~ .x * 100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% flextable::colformat_double(j = 3:5, suffix = "%") %>%
-  flextable::theme_vanilla() %>% flextable::width(j = 2:5,width = 1.25,unit = "in") %>% flextable::width(j = 1,width = 1,unit = "in")
+    ~ .x * 100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% flextable::colformat_double(j = 4:6, suffix = "%",digits = 1) %>%
+  flextable::theme_vanilla() %>% flextable::width(j = 2:6,width = 1.25,unit = "in") %>% flextable::width(j = 1,width = 1,unit = "in")
 
 ```
 

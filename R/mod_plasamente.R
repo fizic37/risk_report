@@ -27,10 +27,10 @@ mod_plasamente_ui <- function(id){
                      mod_plasamente_upload_ui("plasamente_upload_ui_1")),
   
     bs4Dash::box(title = "Tabelul 9 - Evolutia resurselor financiare",icon=icon("table"),status = "primary",
-    width = 12,collapsible = T,collapsed = FALSE,  DT::dataTableOutput(ns("tabel9")), verbatimTextOutput(ns("diverse")) ),
+    width = 12,collapsible = T,collapsed = FALSE,  DT::dataTableOutput(ns("tabel9")) ),
   
   
-    bs4Dash::box(title = "Tabelul 10 - Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM",status = "primary",
+    bs4Dash::box(title = "Tabelul 10 - Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM", status = "primary",
   icon = icon("table"),collapsible = T, collapsed = FALSE, width = 12, DT::dataTableOutput(ns("tabel10")))
   
   )
@@ -48,14 +48,16 @@ mod_plasamente_server <- function(id, vals){
     
     balanta_database <- readRDS("R/reactivedata/balanta/balanta_database.rds")
     
-    observeEvent(input$box_database_plasamente, {req(any(input$box_database_plasamente$collapsed==FALSE, 
+    
+    observeEvent(input$box_database_plasamente, { req(any(input$box_database_plasamente$collapsed==FALSE, 
                                                          input$box_database_plasamente$maximized==TRUE))
-      vals$box_selected <- c(vals$box_selected,"box_database_plasamente")
-    })
+      vals$box_selected <- "box_database_plasamente"
+      
+   })
     
     observeEvent(input$box_upload_plasamente, {req(any(input$box_upload_plasamente$collapsed==FALSE, 
                                                        input$box_upload_plasamente$maximized==TRUE))
-      vals$box_selected <- c(vals$box_selected,"box_upload_plasamente")
+      vals$box_selected <- "box_upload_plasamente"
     })
     
    

@@ -101,7 +101,7 @@ mod_plafoane_server <- function(id, vals){
                         dplyr::select(1:4) ),     rownames = F,extensions = "Buttons", escape = FALSE,
         caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
                                           "Baza de date a Fondurilor Proprii:"),
-        options = list(dom = "Btp", buttons = c("copy","csv","excel"))) %>% DT::formatRound(columns = 2:4,digits = 0) })
+        options = list(dom = "Btp", buttons = c("copy","csv","excel"), pageLength = 5)) %>% DT::formatRound(columns = 2:4,digits = 0) })
    
     
     # Outputs baza de date a plafoanelor din surse administrare (to the right of the page)
@@ -110,7 +110,7 @@ mod_plafoane_server <- function(id, vals){
           rownames = F, extensions = "Buttons",
           caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
             "Baza de date a Surselor in Administrare:"),
-          options = list(dom = "Btp", buttons = c("copy", "csv", "excel")) ) %>% DT::formatRound(columns = 2:5, digits = 0)
+          options = list(dom = "Btp", buttons = c("copy", "csv", "excel"),pageLength=5) ) %>% DT::formatRound(columns = 2:5, digits = 0)
     })
     
     # Main processing observer. It assembles main tables depending on report date, previous month, previous year
@@ -126,53 +126,116 @@ mod_plafoane_server <- function(id, vals){
       vals_plafoane$plafoane_an_anterior <- vals_plafoane$baza_plafoane %>% 
         dplyr::filter(data_raport ==  vals$previous_year) %>% dplyr::select(-data_raport)
       # Mai jos calculez doar coloana de utilizare a plafoanelor la luna curenta
-      vals_plafoane$utilizare_plafoane <- vals$view_baza_solduri %>% 
-        dplyr::filter(Tip_surse != "Nume_cont_stat", data_raport == vals$report_date) %>% dplyr::select(1:2,5) %>%
+      
+      vals_plafoane$utilizare_plafoane <- vals$view_baza_solduri %>%
+        dplyr::filter(Tip_surse != "Nume_cont_stat", data_raport == vals$report_date) %>% dplyr::select(1:2, 5) %>%
         dplyr::arrange(desc(Tip_surse), desc(Sold_garantii)) %>%
-        dplyr::mutate(Plafon_Garantare = ifelse(Tip_surse == "Surse_proprii",
-                                                (vals_plafoane$plafoane_data_curenta$Fonduri_proprii -vals_plafoane$plafoane_data_curenta$Impr_subordon)*7,
-                                                ifelse(`Tip fonduri` == "03. APDRP (OG79)",vals_plafoane$plafoane_data_curenta$OG_79*5,
-                                                       ifelse(`Tip fonduri` == "07. OUG43",vals_plafoane$plafoane_data_curenta$OUG_43*5,
-                                                              ifelse(`Tip fonduri` == "04. LG 329", vals_plafoane$plafoane_data_curenta$LG_329*5,
-                                                                     ifelse(`Tip fonduri` == "02. Lg218", vals_plafoane$plafoane_data_curenta$LG_218,NA_real_))))) ) %>%
-        dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
-        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~paste0("Utilizare_Plafon_",vals$report_date))
+        dplyr::mutate(Plafon_Garantare = ifelse(
+          Tip_surse == "Surse_proprii",
+          ( vals_plafoane$plafoane_data_curenta$Fonduri_proprii - vals_plafoane$plafoane_data_curenta$Impr_subordon ) * 7,
+          ifelse(
+            `Tip fonduri` == "03. APDRP (OG79)",
+            vals_plafoane$plafoane_data_curenta$OG_79 * 5,
+            ifelse(
+              `Tip fonduri` == "07. OUG43",
+              vals_plafoane$plafoane_data_curenta$OUG_43 * 5,
+              ifelse(
+                `Tip fonduri` == "04. LG 329",
+                vals_plafoane$plafoane_data_curenta$LG_329 * 5,
+                ifelse(
+                  `Tip fonduri` == "02. Lg218",
+                  vals_plafoane$plafoane_data_curenta$LG_218,
+                  NA_real_
+                )
+              )
+            )
+          )
+        )) %>%
+        dplyr::mutate(Tip_surse = ifelse(Tip_surse == "Surse_proprii",Tip_surse,`Tip fonduri`)) %>% 
+          dplyr::group_by(Tip_surse) %>% dplyr::summarise(Plafon_Garantare = mean(Plafon_Garantare),
+            Sold_garantii=sum(Sold_garantii)) %>% dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
+              dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$report_date))
+      
       # Apoi calculez doar coloana de utilizare a plafoanelor la luna anterioara
-      vals_plafoane$utilizare_plafoane_luna_anterioara <- vals$view_baza_solduri %>% 
-        dplyr::filter(Tip_surse != "Nume_cont_stat", data_raport == vals$previous_month) %>% dplyr::select(1:2,5) %>%
+      vals_plafoane$utilizare_plafoane_luna_anterioara <-
+        vals$view_baza_solduri %>%
+        dplyr::filter(Tip_surse != "Nume_cont_stat",
+                      data_raport == vals$previous_month) %>% dplyr::select(1:2, 5) %>%
         dplyr::arrange(desc(Tip_surse), desc(Sold_garantii)) %>%
-        dplyr::mutate(Plafon_Garantare = ifelse(Tip_surse == "Surse_proprii",
-                                                (vals_plafoane$plafoane_luna_anterioara$Fonduri_proprii - vals_plafoane$plafoane_luna_anterioara$Impr_subordon)*7,
-                                                ifelse(`Tip fonduri` == "03. APDRP (OG79)",vals_plafoane$plafoane_luna_anterioara$OG_79*5,
-                                                       ifelse(`Tip fonduri` == "07. OUG43",vals_plafoane$plafoane_luna_anterioara$OUG_43*5,
-                                                              ifelse(`Tip fonduri` == "04. LG 329", vals_plafoane$plafoane_luna_anterioara$LG_329*5,
-                                                                     ifelse(`Tip fonduri` == "02. Lg218", vals_plafoane$plafoane_luna_anterioara$LG_218,NA_real_))))) ) %>%
-        dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
-        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~paste0("Utilizare_Plafon_",vals$previous_month))
+        dplyr::mutate(Plafon_Garantare = ifelse(
+          Tip_surse == "Surse_proprii",
+          (
+            vals_plafoane$plafoane_luna_anterioara$Fonduri_proprii - vals_plafoane$plafoane_luna_anterioara$Impr_subordon
+          ) * 7,
+          ifelse(
+            `Tip fonduri` == "03. APDRP (OG79)",
+            vals_plafoane$plafoane_luna_anterioara$OG_79 * 5,
+            ifelse(
+              `Tip fonduri` == "07. OUG43",
+              vals_plafoane$plafoane_luna_anterioara$OUG_43 * 5,
+              ifelse(
+                `Tip fonduri` == "04. LG 329",
+                vals_plafoane$plafoane_luna_anterioara$LG_329 * 5,
+                ifelse(
+                  `Tip fonduri` == "02. Lg218",
+                  vals_plafoane$plafoane_luna_anterioara$LG_218,
+                  NA_real_
+                )
+              )
+            )
+          )
+        )) %>%
+        dplyr::mutate(Tip_surse = ifelse(Tip_surse == "Surse_proprii",Tip_surse,`Tip fonduri`)) %>% 
+        dplyr::group_by(Tip_surse) %>% dplyr::summarise(Plafon_Garantare = mean(Plafon_Garantare),
+            Sold_garantii=sum(Sold_garantii)) %>% dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
+        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$previous_month))
       
       # Utilizarea plafoanelor de garantare in anul anterior
-      vals_plafoane$utilizare_plafoane_an_anterior <- vals$view_baza_solduri %>% 
-        dplyr::filter(Tip_surse != "Nume_cont_stat", data_raport ==  vals$previous_year) %>% dplyr::select(1:2,5) %>%
+      
+      vals_plafoane$utilizare_plafoane_an_anterior <-
+        vals$view_baza_solduri %>%
+        dplyr::filter(Tip_surse != "Nume_cont_stat",
+                      data_raport ==  vals$previous_year) %>% dplyr::select(1:2, 5) %>%
         dplyr::arrange(desc(Tip_surse), desc(Sold_garantii)) %>%
-        dplyr::mutate(Plafon_Garantare = ifelse(Tip_surse == "Surse_proprii",
-                                                (vals_plafoane$plafoane_an_anterior$Fonduri_proprii - vals_plafoane$plafoane_an_anterior$Impr_subordon)*7,
-                                                ifelse(`Tip fonduri` == "03. APDRP (OG79)",vals_plafoane$plafoane_an_anterior$OG_79*5,
-                                                       ifelse(`Tip fonduri` == "07. OUG43",vals_plafoane$plafoane_an_anterior$OUG_43*5,
-                                                              ifelse(`Tip fonduri` == "04. LG 329", vals_plafoane$plafoane_an_anterior$LG_329*5,
-                                                                     ifelse(`Tip fonduri` == "02. Lg218", vals_plafoane$plafoane_an_anterior$LG_218,NA_real_))))) ) %>%
-        dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
-        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~paste0("Utilizare_Plafon_", vals$previous_year))
+        dplyr::mutate(Plafon_Garantare = ifelse(
+          Tip_surse == "Surse_proprii",
+          (
+            vals_plafoane$plafoane_an_anterior$Fonduri_proprii - vals_plafoane$plafoane_an_anterior$Impr_subordon
+          ) * 7,
+          ifelse(
+            `Tip fonduri` == "03. APDRP (OG79)",
+            vals_plafoane$plafoane_an_anterior$OG_79 * 5,
+            ifelse(
+              `Tip fonduri` == "07. OUG43",
+              vals_plafoane$plafoane_an_anterior$OUG_43 * 5,
+              ifelse(
+                `Tip fonduri` == "04. LG 329",
+                vals_plafoane$plafoane_an_anterior$LG_329 * 5,
+                ifelse(
+                  `Tip fonduri` == "02. Lg218",
+                  vals_plafoane$plafoane_an_anterior$LG_218,
+                  NA_real_
+                )
+              )
+            )
+          )
+        )) %>%
+        dplyr::mutate(Tip_surse = ifelse(Tip_surse == "Surse_proprii",Tip_surse,`Tip fonduri`)) %>% 
+        dplyr::group_by(Tip_surse) %>% dplyr::summarise(Plafon_Garantare = mean(Plafon_Garantare),
+          Sold_garantii=sum(Sold_garantii)) %>% dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>% 
+        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$previous_year))
       
       
       # Asamblez tabelul 3 si utilizarea plafoanelor folosind left join dupa tip surse
       
-      vals$tabel3 <- vals_plafoane$utilizare_plafoane %>%
-        dplyr::select(2, 4, 5) %>% dplyr::left_join(vals_plafoane$utilizare_plafoane_luna_anterioara %>%
-                                                      dplyr::select(2, 5),
-                  by = "Tip fonduri") %>% dplyr::left_join(vals_plafoane$utilizare_plafoane_an_anterior %>%
-                         dplyr::select(2, 5), by = "Tip fonduri") %>% dplyr::mutate("Tip fonduri" =
-                          stringr::str_remove_all(string = `Tip fonduri`, pattern = '[:digit:][:digit:]\\.') %>%
-                                                                                                                                                                                 stringr::str_trim(string = ., side = "left"))
+     
+      vals$tabel3 <- vals_plafoane$utilizare_plafoane %>% dplyr::left_join(
+          y = vals_plafoane$utilizare_plafoane_luna_anterioara %>% dplyr::select(-2, -3),
+          by = "Tip_surse" ) %>% dplyr::left_join(
+          y = vals_plafoane$utilizare_plafoane_an_anterior %>% dplyr::select(-2, -3),
+          by = "Tip_surse" ) %>% dplyr::arrange(desc(Plafon_Garantare)) %>% 
+        dplyr::mutate(Tip_surse = stringr::str_remove_all(string = Tip_surse, pattern = '[:digit:][:digit:]\\.') %>%
+          stringr::str_trim(string = ., side = "left"))
       
       output$utilizare_plafoane <-  DT::renderDataTable(  DT::datatable(  data = vals$tabel3,
             rownames = FALSE,
@@ -180,8 +243,8 @@ mod_plafoane_server <- function(id, vals){
                                               "Tabelul 3 - Utilizarea plafoanelor de garantare"),
             options = list(dom = "Bt", buttons = c("copy", "csv", "excel")),
             extensions = "Buttons"
-          ) %>% DT::formatRound(columns = 2, digits = 0) %>%
-            DT::formatPercentage(columns = 3:5, digits = 1)
+          ) %>% DT::formatRound(columns = 2:3, digits = 0) %>%
+            DT::formatPercentage(columns = 4:6, digits = 1)
         )
       
       # Asamblez tabelul 4

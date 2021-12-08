@@ -218,8 +218,9 @@ mod_plasamente_upload_server <- function(id, vals){
         output$missing_banks <- renderUI({
           fluidRow(
             column(width = 12,
-                   h3("STOP, nu am identificat toate bancile.Completeaza in coloana 3:") ),
-            column(width = 12,rhandsontable::rHandsontableOutput(session$ns("fill_banks")) ),
+                   h3("STOP, nu am identificat toate bancile.Completeaza in coloana 3:"), br() ),
+            column(width = 12,rhandsontable::rHandsontableOutput(session$ns("fill_banks")), br() ),
+            
             column(width = 6,
                    actionLink(inputId = session$ns("save_missing_banks"),label = "Salveaza bancile modificate", icon=icon("save")))
           )
@@ -227,7 +228,8 @@ mod_plasamente_upload_server <- function(id, vals){
         output$fill_banks <- rhandsontable::renderRHandsontable({
           rhandsontable::rhandsontable(data=vals_balanta_upload$df_new %>% dplyr::filter(is.na(Banca)) %>% 
                                          dplyr::select(1:2,4), rowHeaders = NULL,readOnly = F,colHeaders = 
-                                         c("Simbol Cont", "Denumire Cont", "Selecteaza Finantatorul")) %>% 
+                                         c("Simbol Cont", "Denumire Cont", "Selecteaza Finantatorul"),
+                                       width = 600, height = 250) %>% 
             rhandsontable::hot_col(col = 3,type = "dropdown",
                                    source = unique(c(coresp_banci_depozite$Banca,coresp_banci_curente$Banca))) %>%
             rhandsontable::hot_col(col = 1:2,readOnly = TRUE) })

@@ -11,19 +11,20 @@ mod_plati_ui <- function(id){
   ns <- NS(id)
   tagList(
     shinybusy::add_busy_spinner(  color = "#ff007b",    position = "bottom-right",    timeout = 200),
+    shinyFeedback::useShinyFeedback(),
     
     bs4Dash::box(title = "Tabelul 11 - rata platilor de garantii",collapsible = T,collapsed = F,
                  maximizable = T, width = 12,icon = icon("border-all"),
                  DT::dataTableOutput(ns("tabel11"))),
     fluidRow(
-    bs4Dash::box(title = "Baza de date a platilor de garantii",collapsible = T,
+    bs4Dash::box(title = "Baza de date a platilor de garantii", collapsible = T,
                  collapsed = T, maximizable = T, width = 6, icon = icon("database"),
                  fluidRow(column(width = 12,                              
                                  DT::dataTableOutput(ns("plati_database")), br()),
                           column(width = 6, shinyWidgets::materialSwitch(inputId = ns("change_view"),label = "Change view",
                                                                          value = FALSE,status = "primary") ),
                           column(width = 6, shinyWidgets::materialSwitch(inputId = ns("show_snapshots"),
-                                label = "Show BI snapshots", value=FALSE,status = "primary") ),
+                                label = "Show BI data snapshots", value=FALSE,status = "primary") ),
                           column(width = 12,DT::dataTableOutput(ns("snapshots")))
                  )),
     
@@ -31,12 +32,14 @@ mod_plati_ui <- function(id){
                  collapsed = T, maximizable = T, width = 6, icon = icon("database"),
                  fluidRow(column(width = 12,                              
                                  DT::dataTableOutput(ns("cereri_plata_database")), br()),
-                          column(width = 6, shinyWidgets::materialSwitch(inputId = ns("change_view_cereri_plata"),
+                          column(width = 3, shinyWidgets::materialSwitch(inputId = ns("change_view_cereri_plata"),
                                   label = "Change view",   value = FALSE,status = "primary") ),
-                          column(width = 6, downloadLink(outputId = ns("down_cereri_plata"),
-                                        label = "Download fisierul de cereri de plata"))
+                          column(width = 5, downloadLink(outputId = ns("down_cereri_plata"),
+                                        label = "Download fisierul de cereri de plata")),
+                          column(width = 4, textOutput(outputId = ns("show_max_cereri_plata")))
                  ))
     ),                  
+    
     
     fluidRow(                    
     bs4Dash::box(title='Upload BI file to update plati database', collapsible = T,
@@ -44,38 +47,44 @@ mod_plati_ui <- function(id){
                  footer = "Se downloadeaza BI din link-ul atasat, se actualizeaza data snapshot pentru ambele tabele, se salveaza local si
       apoi se uploadeaza fisierul salvat.",
                  fluidRow(
-                   column(width = 3, fileInput(ns("bi_upload"),"Upload BI file",accept = ".xlsx",buttonLabel = "Excel only",
+                   column(width = 6, fileInput(ns("bi_upload"),"Upload BI file",accept = ".xlsx",buttonLabel = "Excel only",
                                                placeholder = "Nothing uploaded") ),
                    
-                   column(width = 2, br(), textOutput(outputId = ns("messages"))),
+                   column(width = 6, br(), textOutput(outputId = ns("messages"))),
                    
-                   column(width = 7, br(), div(style="display:inline-block;margin-left: 40%;padding-bottom: 10px;", 
-                                               downloadLink(outputId = ns("bi_link"),label = "Click aici pentru a downloada modelul de BI")) ),
+                   hr(),
+                   
+                   column(width = 12, br(), #div(style="display:inline-block;margin-left: 40%;padding-bottom: 10px;", 
+                              downloadLink(outputId = ns("bi_link"),label = "Click aici pentru a downloada modelul de BI")),
                    
                    column(width = 8, DT::dataTableOutput(ns("sinteza_upload"))),
                    column(width = 4),
                    column(width = 6,uiOutput(outputId = ns("show_save")))
                  )
     ),
+    
     bs4Dash::box(title='Upload excel file for Cereri de plata', collapsible = T,
                  collapsed = T, maximizable = T, width = 6,icon=icon("file-excel"),
                  footer = "Se downloadeaza fisierul excel din link-ul atasat, se actualizeaza coloanele DocumentId, 
                  Data_cerere_plata si cerere_plata se salveaza local si se uploadeaza folosind butonul de mai sus",
                  
-                 column(width = 3, fileInput(ns("cereri_plata_upload"),"Upload cereri plata file",
+                 fluidRow(
+                 column(width = 5, fileInput(ns("cereri_plata_upload"),"Upload cereri plata file",
                                              accept = ".xlsx",buttonLabel = "Excel only",
                                              placeholder = "Nothing uploaded") ),
                  
-                 column(width = 2, br(), textOutput(outputId = ns("cereri_plata_messages"))),
+                 column(width = 7, br(), verbatimTextOutput(outputId = ns("cereri_plata_messages"))),
                  
-                 column(width = 7, br(), div(style="display:inline-block;margin-left: 40%;padding-bottom: 10px;", 
+                 hr(),
+                 
+                 column(width = 12, br(), #div(style="display:inline-block;margin-left: 40%;padding-bottom: 10px;", 
                               downloadLink(outputId = ns("cereri_plata_link"),
-                                  label = "Click aici pentru a downloada modelul de fisier cereri plata")) ),
+                                  label = "Click aici pentru a downloada modelul de fisier cereri plata")),
                  
                  column(width = 8, DT::dataTableOutput(ns("sinteza_upload_cereri_plata"))),
                  column(width = 4),
                  column(width = 6,uiOutput(outputId = ns("show_save_cereri_plata")))
-    )
+    ) )
     )
   )
 }
@@ -92,31 +101,47 @@ mod_plati_server <- function(id, vals){
     output$bi_link <- downloadHandler( filename = function() {"BI_plati.xlsx"},content = function(file) {
       file.copy(from = "R/reactivedata/plati/BI_plati.xlsx",to = file) } )
     
-    output$down_cereri_plata <- downloadHandler( filename = function() {"cereri_plata.xlsx"},content = function(file) {
-      file.copy(from = "R/reactivedata/plati/cereri_plata.xlsx",to = file) } )
+    output$cereri_plata_link <- downloadHandler( filename = function() {"cereri_plata.xlsx"},content = function(file) {
+      file.copy(from = "R/cereri_plata.xlsx",to = file) } )
     
     plati_database <- readRDS("R/reactivedata/plati/plati_database.rds")
     
-    #plati_prelucrate <- plati_database %>% dplyr::group_by(Anul=lubridate::year(data_plata),
-       #   Luna=lubridate::month(data_plata,label = T)) %>%  dplyr::summarise(Plati = sum(Plata)) %>% dplyr::arrange(desc(Anul))
-    
     cereri_plata_database <- readRDS("R/reactivedata/plati/cereri_plata.rds")
-    vals_plati <- reactiveValues(snapshots = bi_snapshots)
+    
+    vals_plati <- reactiveValues(snapshots = bi_snapshots, cereri_plata_database = cereri_plata_database)
+    
+    output$show_max_cereri_plata <- renderText({ req(vals_plati$cereri_plata_database)
+      paste0("Data maxima a cererii de plata este: ",max(vals_plati$cereri_plata_database$Data_cerere_plata))
+      })
     
     observeEvent(input$cereri_plata_upload,{
+      
       tryCatch(expr = {
-      vals_plati$cereri_plata_read <- readxl::read_excel(input$cereri_plata_upload$datapath) %>% 
-        dplyr::select(DocumentId,Data_cerere_plata,Cerere_Plata)
-      if (janitor::compare_df_cols_same(vals_plati$cereri_plata_read, cereri_plata_database)) {
+        
+       vals_plati$cereri_plata_read <- readxl::read_excel(input$cereri_plata_upload$datapath) %>% 
+        dplyr::select(DocumentId,`Cod Partener`,Data_cerere_plata,Cerere_Plata) %>%
+          dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
+      
+      if ( janitor::compare_df_cols_same(vals_plati$cereri_plata_read, cereri_plata_database) ) {
+        
         saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/cereri_plata.rds")
-        file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx")
+        
+        file.copy(from = input$cereri_plata_upload$datapath,to = "R/cereri_plata.xlsx")
+        
+        vals_plati$cereri_plata_database <- vals_plati$cereri_plata_read
+        
         shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
               .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
       }
-      else {  shinyFeedback::showToast(title = "Warning!",message = "Database inconsistency",
-                                type = "warning",keepVisible = T) }
-      },error = function(e) {shinyFeedback::showToast(title = "STOP",message = e,
-                                                      type = "warning",keepVisible = T) }
+      else {  output$cereri_plata_messages <- renderPrint(  janitor::compare_df_cols( vals_plati$cereri_plata_read,
+                                                                    cereri_plata_database,return = "mismatch")) }
+      },
+      error = function(e) { shinyFeedback::showToast(title = "STOP",message = paste0("ERROR, show it to your administrator: ",e),
+                                                      type = "error",keepVisible = T)
+        
+        
+        
+        }
       )
       
     })
@@ -125,7 +150,7 @@ mod_plati_server <- function(id, vals){
     observeEvent(input$change_view_cereri_plata,{ 
        
       if (input$change_view_cereri_plata == TRUE) {
-        vals_plati$cereri_plata_prelucrate <- cereri_plata_database %>% 
+        vals_plati$cereri_plata_prelucrate <- vals_plati$cereri_plata_database %>% 
           dplyr::group_by(Anul=lubridate::year(Data_cerere_plata)) %>%
           dplyr::summarise(Cereri_Plata = sum(Cerere_Plata)) %>% dplyr::arrange(desc(Anul))
         vals_plati$round_col_cereri_plata <- 2
@@ -143,10 +168,12 @@ mod_plati_server <- function(id, vals){
       }
     })
     
-    output$cereri_plata_database <- DT::renderDataTable({req(vals_plati$cereri_plata_prelucrate)
-      DT::datatable(data = vals_plati$cereri_plata_prelucrate,rownames = F,caption = vals_plati$caption_cereri_plata,
-                    options = list(dom="bt", pageLength = vals_plati$page_length_cereri_plata,buttons=c("copy","excel")),
-                    extensions = "Buttons") %>% DT::formatRound(columns = vals_plati$round_col_cereri_plata,digits = 0)
+    output$cereri_plata_database <- DT::renderDataTable({ req(vals_plati$cereri_plata_prelucrate)
+      DT::datatable( data = vals_plati$cereri_plata_prelucrate,rownames = F,
+                     caption = htmltools::tags$caption( style = 'caption-side: top; text-align: left;',
+                                vals_plati$caption_cereri_plata ),extensions = "Buttons",
+                    options = list( paging=FALSE, dom = "Bt", buttons=c("copy","excel"), scrollY = "200px") ) %>% 
+        DT::formatRound(columns = vals_plati$round_col_cereri_plata,digits = 0)
     })
     
     # Assemble of tabel11
@@ -204,7 +231,7 @@ mod_plati_server <- function(id, vals){
     
     output$plati_database <- DT::renderDataTable( { req(vals_plati$plati_prelucrate)
       DT::datatable(rownames = FALSE,  extensions = "Buttons",data = vals_plati$plati_prelucrate,
-       options = list(dom = "Btp", pageLength = vals_plati$page_length, buttons = c("copy","excel")),
+       options = list(dom = "Bt", paging = FALSE, buttons = c("copy","excel"), scrollY = "200px"),
        caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',vals_plati$caption)) %>%
         DT::formatRound(columns = vals_plati$round_col,digits = 0) } )
     
@@ -224,7 +251,8 @@ mod_plati_server <- function(id, vals){
       
       if (any (vals_plati$snapshot_bi_plata1 <= bi_snapshots$snapshot_bi_plata1, 
                vals_plati$snapshot_bi_plata2 <= bi_snapshots$snapshot_bi_plata2)) {
-        output$messages <- renderText("STOP, nu voi prelucra si salva fisiere BI cu data snapshot mai mica sau egala decat ce am stocat")
+        output$messages <- renderText("STOP, 
+              nu voi prelucra si salva fisiere BI cu data snapshot mai mica sau egala decat ce am stocat")
       }
       else {
         coresp_luni_data_plata <- readRDS("R/reactivedata/plati/coresp_luni.rds")

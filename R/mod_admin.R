@@ -12,11 +12,28 @@ mod_admin_ui <- function(id){
   bs4Dash::tabsetPanel(id = ns("admin"),  selected = T,  
   shiny::tabPanel(title = "Banci",value = "banci", icon = icon("university"), 
                   shinyFeedback::useShinyFeedback(),
-      tagList( br(),
-            bs4Dash::box( title = "Fuziuni banci",status = "primary",collapsible = T,collapsed = T,maximizable = T,
+     fluidPage(
+            br(),
+            fluidRow(
+            bs4Dash::box( title = "Lista banci fuziuni",status = "primary",collapsible = T,collapsed = F,maximizable = T,
                          footer = "Click pe o banca din tabel si editeaza data si noul finantator cu care a fuzionat",
-                         width = 12, icon = icon("object-ungroup"),
-                  tagList(  DT::dataTableOutput(ns("lista_banci")))    ),
+                         width = 8, icon = icon("object-ungroup"),
+                         DT::dataTableOutput(ns("lista_banci")) ),
+            
+            bs4Dash::box(title = "Update banci din BI",status = "primary",collapsible = T,collapsed = F,maximizable = T,
+                         width = 4, icon = icon("file-excel"),
+                         footer = "Se downloadeaza modelul de BI folosind link-ul Model BI, se modifica data snapshot, se 
+                         salveaza local fisierul si se uploadeaza. Ulterior voi verifica daca sunt banci noi si te voi intreba 
+                         daca doresti sa actualizez",
+                  fluidRow(
+                    column(width = 8, fileInput(inputId = ns("upload_bi_banci"),accept = ".xlsx",label = "BI Banci",
+                                                placeholder = "Nothing uploaded",buttonLabel = "Excel")),
+                    column(width = 4, br(),br(), downloadLink(ns("link_bi_banci"),label = "Model BI")),
+                    
+                    column(width = 12, DT::dataTableOutput(ns("diferente_bi_banci")), 
+                           uiOutput(outputId = ns("show_save_diferente_bi")))
+                    
+                  )  ) ),
             
             bs4Dash::box( title = "Conturi contabile - corespondenta banci",status = "primary",collapsible = T,collapsed = T,
                           maximizable = T,  width = 12, icon = icon("hand-point-right"),
@@ -26,7 +43,8 @@ mod_admin_ui <- function(id){
             
   )
   )
-  )
+  
+)
 }
     
 #' admin Server Functions
@@ -60,10 +78,41 @@ mod_admin_server <- function(id, vals){
     
    
     output$lista_banci <- DT::renderDataTable( DT::datatable(data = vals_admin$tabela_nume_banci,
-      selection = list(mode = "single",selected = NULL, target = "row"),rownames = FALSE,
+      selection = list(mode = "single",selected = NULL, target = "row"),rownames = FALSE, extensions = "Buttons",
       caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
-                    "Lista bancilor")) )
-  
+                    "Lista bancilor"), options = list(paging = FALSE, scrollY = "300px",dom = "Btfip",
+                                            buttons = c("copy","excel"))) )
+   
+    output$link_bi_banci <- downloadHandler(filename = function() { "BI_banci.xlsx" }, content = function(file) {
+      file.copy( from = "R/reactivedata/banci/BI_banci.xlsx" , to = file ) } )
+    
+    
+    observeEvent(input$upload_bi_banci,{
+      
+      vals_admin$bi_banci <- readxl::read_excel(input$upload_bi_banci$datapath,skip = 4) %>% 
+        dplyr::filter(`Unique ID` != "Nespecificat") %>% dplyr::select(FinantatorID = `Unique ID`,
+            CodFinantator = `Cod Finantator Generic`, DenumireFinantator = `Denumire Finantator Generic`)
+      
+      
+      vals_admin$bi_diferente <- vals_admin$bi_banci[which(is.na(match(vals_admin$bi_banci$FinantatorID,
+                                      table = vals_admin$tabela_nume_banci$FinantatorID))),]
+      
+      
+      if ( nrow(vals_admin$bi_diferente) == 0 ) {
+        shinyFeedback::showToast(type = "success",title = "SUCCES! No need for further action",
+        message = "Baza de date a bancilor este sincronizata cu BI-ul furnizat",keepVisible = TRUE, session = session)
+      } else if ( nrow(vals_admin$bi_diferente) > 0) {
+        
+        output$diferente_bi_banci <- DT::renderDataTable(DT::datatable(data = vals_admin$bi_diferente,
+              rownames = FALSE, options = list(dom="t"), caption = "STOP, in BI-ul furnizat am identificat bancile noi de mai jos. 
+              Vrei sa le salvez in baza de date?"))
+        
+        output$show_save_diferente_bi <- renderUI( actionLink(inputId = ns("save_diferente_bi"),
+                              label = "Salveaza diferentele de mai sus in baza de date",icon = icon('save')))
+      }
+      
+    })
+    
     observeEvent(input$lista_banci_rows_selected,{
       
       vals_admin$banca_selectata <- vals_admin$tabela_nume_banci  %>%   dplyr::slice(input$lista_banci_rows_selected)
@@ -109,6 +158,25 @@ mod_admin_server <- function(id, vals){
                                .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
       
       })
+    
+    observeEvent(input$save_diferente_bi, {
+      vals_admin$bi_diferente_final <- vals_admin$bi_diferente %>% dplyr::mutate(DataInitiala = as.Date("1999-01-01"),
+                                                                      DataExpirare = as.Date("2100-01-01"))
+      
+      if (janitor::compare_df_cols_same(vals_admin$bi_diferente_final, vals_admin$tabela_nume_banci)) {
+        
+        vals_admin$tabela_nume_banci <- dplyr::bind_rows(vals_admin$bi_diferente_final, vals_admin$tabela_nume_banci)
+        
+        saveRDS(object = vals_admin$tabela_nume_banci,file = "R/reactivedata/banci/tabela_nume_banci.rds")
+        
+        file.copy(from = input$upload_bi_banci$datapath,to = "R/reactivedata/banci/BI_banci.xlsx",overwrite = TRUE)
+        
+        shinyFeedback::showToast(type = "success",message = "Saved to banci database",title = "Success",keepVisible = T)
+      } else {shinyFeedback::showToast(type = "error",message = "NU am salvat, spune-i administratorului aplicatiei",
+                        title = "Success",keepVisible = T) }
+    })
+      
+    
     
     
     

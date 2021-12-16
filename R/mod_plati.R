@@ -102,7 +102,7 @@ mod_plati_server <- function(id, vals){
       file.copy(from = "R/reactivedata/plati/BI_plati.xlsx",to = file) } )
     
     output$cereri_plata_link <- downloadHandler( filename = function() {"cereri_plata.xlsx"},content = function(file) {
-      file.copy(from = "R/cereri_plata.xlsx",to = file) } )
+      file.copy(from = "R/reactivedata/plati/cereri_plata.xlsx",to = file) } )
     
     plati_database <- readRDS("R/reactivedata/plati/plati_database.rds")
     
@@ -126,7 +126,7 @@ mod_plati_server <- function(id, vals){
         
         saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/cereri_plata.rds")
         
-        file.copy(from = input$cereri_plata_upload$datapath,to = "R/cereri_plata.xlsx")
+        file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx")
         
         vals_plati$cereri_plata_database <- vals_plati$cereri_plata_read
         

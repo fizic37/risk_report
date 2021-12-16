@@ -228,14 +228,16 @@ mod_plafoane_server <- function(id, vals){
       
       # Asamblez tabelul 3 si utilizarea plafoanelor folosind left join dupa tip surse
       
-     
-      vals$tabel3 <- vals_plafoane$utilizare_plafoane %>% dplyr::left_join(
+     vals$tabel3 <- tryCatch( expr = {vals_plafoane$utilizare_plafoane %>% dplyr::left_join(
           y = vals_plafoane$utilizare_plafoane_luna_anterioara %>% dplyr::select(-2, -3),
           by = "Tip_surse" ) %>% dplyr::left_join(
           y = vals_plafoane$utilizare_plafoane_an_anterior %>% dplyr::select(-2, -3),
           by = "Tip_surse" ) %>% dplyr::arrange(desc(Plafon_Garantare)) %>% 
         dplyr::mutate(Tip_surse = stringr::str_remove_all(string = Tip_surse, pattern = '[:digit:][:digit:]\\.') %>%
-          stringr::str_trim(string = ., side = "left"))
+          stringr::str_trim(string = ., side = "left"))}, error = function(e) {
+            data.frame(Tip_surse="Upload more data",Plafon_Garantare=0,Sold_garantii = 0,Utilizare_Plafon_curent= 0,
+                       Utilizare_Plafon_luna_anterioara=0,Utilizare_plafon_an_anterior=0)
+          } )
       
       output$utilizare_plafoane <-  DT::renderDataTable(  DT::datatable(  data = vals$tabel3,
             rownames = FALSE,

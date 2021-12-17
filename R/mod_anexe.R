@@ -12,21 +12,21 @@ mod_anexe_ui <- function(id){
   tagList(
     shinybusy::add_busy_spinner(  color = "#ff007b",    position = "bottom-right",    timeout = 200 ),
     
-    bs4Dash::box(title = "Top 10 expuneri surse proprii",icon = icon("chart-bar"),width = 12,
+    bs4Dash::box(title = "Top 10 expuneri surse proprii", icon = icon("chart-bar"),width = 12,
                  status = "primary",collapsible = TRUE,collapsed = T,
                  downloadButton(ns("down_top_expuneri"),"Download top 10 expuneri"),
                  DT::dataTableOutput(ns("top_expuneri"))),
     
-    bs4Dash::box(title = "Anexa A - Banci, solduri, clase de risc",icon = icon("university"),width = 12,
+    bs4Dash::box(title = "Anexa A - Banci, solduri, clase de risc", icon = icon("university"),width = 12,
                  status = "primary",collapsible = TRUE,collapsed = FALSE,
                  fluidRow(column(width = 4,
                  shinyWidgets::autonumericInput(ns("cap_proprii"),value = 0,align = "right",width = "300px",
                                          label = "Input fonduri proprii minus subordonate" ) ),
                  
-                 column(width = 4,br(),div(style="display:inline-block;margin-left: 40%;padding-bottom: 0px;",
+                 column(width = 4,br(), div(style="display:inline-block;margin-left: 40%;padding-top: 27px;",
                                   downloadLink(ns("down_anexaA"),"Download Anexa A")) ),
                  
-                 column(width = 4, br(),div(style="display:inline-block;margin-left: 40%;padding-bottom: 5px;",
+                 column(width = 4, br(),div(style="display:inline-block;margin-left: 40%;padding-top: 27px;",
                                 actionLink(ns("show_clase"),"View clasele de Risc",icon=icon("table"))) ),
                     
                  column(width = 12,  DT::dataTableOutput(ns("anexa_A"))),
@@ -34,14 +34,13 @@ mod_anexe_ui <- function(id){
                               status_on = "danger", icon_on = icon("wye-slash"), icon_off = icon("table"),
                               value = FALSE,status_off = "primary",label_on = "Hide rata platilor",
                                 label_off = "Click to show rata platilor pe banci")),
-                          column(width = 9, DT::dataTableOutput(ns("rata_platilor")))
+                          column(width = 12, DT::dataTableOutput(ns("rata_platilor")))
                  )
            ),
     
-    bs4Dash::box(title = "Anexa B - Depozite bancare, clase risc",icon = icon("money-bill-alt"), width = 12,
+    bs4Dash::box(title = "Anexa B - Depozite bancare, clase risc", icon = icon("money-bill-alt"), width = 12,
                  status = "primary", collapsible = T,collapsed = F,
-                  DT::dataTableOutput(ns("anexaB")),
-                 br(), downloadButton(ns("down_anexa_C"),"Download Anexa C") )
+                  DT::dataTableOutput(ns("anexaB")) )
     
       )
 }
@@ -58,15 +57,18 @@ mod_anexe_server <- function(id, vals){
       dplyr::filter(DataInitiala <= vals$report_date & DataExpirare >= vals$report_date) %>% dplyr::select(2:3)
     
     observeEvent(input$show_clase,{ req(vals_anexe$clase_risc)
+      
       showModal(modalDialog(title = "Clase de Risc Finantatori - neajustate pentru rata platilor", size = "l", 
                             DT::dataTableOutput(session$ns("clase_risc"))  ))
       
       output$clase_risc <- DT::renderDataTable( DT::datatable(data = vals_anexe$clase_risc %>% dplyr::select(1:3) %>%
-                dplyr::mutate(dplyr::across(dplyr::everything(),~as.factor(.x))),
-          options = list(dom = "tp"), filter = "top") )
+                dplyr::mutate(dplyr::across(dplyr::everything(),~as.factor(.x))), extensions = "Buttons",rownames = F,
+          options = list(dom = "Bftip", paging = FALSE, scrollY="400px", buttons = c("copy","excel","csv")) ) )
     })
     
     observeEvent(vals$report_date, {
+      #Calculate Rata Platilor pe Banci
+      
       vals_anexe$begining_year <- lubridate::make_date(lubridate::year(vals$previous_year),12,31)
       
       vals_anexe$cap_proprii <- readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
@@ -122,8 +124,9 @@ mod_anexe_server <- function(id, vals){
       dplyr::select(Banca, Clasa_Risc_Ajustata,PlafonProcentual, LimitaTrezorerie)
     
     output$rata_platilor <- DT::renderDataTable( { req(input$show_rata_platilor == TRUE)
-      DT::datatable(data = vals_anexe$rata_platilor,
-          options = list(dom = "tp"), caption =  htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+      DT::datatable(data = vals_anexe$rata_platilor, rownames = FALSE, extensions = "Buttons",
+          options = list(dom = "Bftip", paging = FALSE, scrollY="300px", buttons = c("copy","excel","csv")), 
+          caption =  htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
                         "Rata anualizata a Platilor pe banci:") )  %>%
             DT::formatRound(columns = c(2:3,9), digits = 0) %>% DT::formatPercentage(columns = 4,digits = 1) })
     
@@ -170,17 +173,18 @@ mod_anexe_server <- function(id, vals){
           dplyr::mutate( Grad_Utilizare_Plafon = (Conturi_Curente+Depozite+Gestionari_Cautiuni_Garantii)/LimitaTrezorerie) ) %>%
             dplyr::arrange(rank_order) %>% dplyr::select(-rank_order)
     
+   
+    
    output$anexaB <- DT::renderDataTable({ req(vals$anexaC_final)
-      DT::datatable(data = vals$anexaC_final, options = list(dom = "tp"), 
+      DT::datatable(data = vals$anexaC_final, rownames = F, extensions = "Buttons",
+                    options = list(dom = "Bfti", paging = FALSE, scrollY = "300px", buttons = c("copy","excel","csv")), 
                 caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
                 paste0("Anexa B la ", vals$report_date))) %>%
         DT::formatRound(columns = 3:6,digits = 0) %>% DT::formatPercentage(columns = 7,digits = 1)  })
    
-    output$down_anexa_C <- downloadHandler(filename = function() {paste0("anexaB_",vals$report_date,".csv")}, 
-    content = function(file) {readr::write_csv(x =  vals$anexaC_final,file = file) } )
   })
     
-    
+    # Calculate Anexa A
     observeEvent(input$cap_proprii,{ req(vals_anexe$banci_ajustate)
       
       vals_anexe$solduri_curente <- readRDS("R/reactivedata/solduri/baza_banci.rds") %>% 
@@ -201,7 +205,6 @@ mod_anexe_server <- function(id, vals){
         dplyr::mutate(dplyr::across(.cols = PlafonProcentual,~as.numeric(.x)))
       
       
-      
       vals$anexa_A <- vals_anexe$solduri_curente %>% dplyr::arrange(ClasaRisc,desc(Sold_Garantii)) %>% 
         dplyr::mutate(rank_order = match(x = ClasaRisc, table = LETTERS) ) %>%
         dplyr::bind_rows( vals_anexe$solduri_curente %>% dplyr::group_by(ClasaRisc=as.character(ClasaRisc)) %>% 
@@ -215,9 +218,11 @@ mod_anexe_server <- function(id, vals){
         dplyr::select(ClasaRisc, Banca, Sold_Garantii, Plafon_Finantator,Utilizare_Plafon_Finantator,Utilizare_Plafon_Garantare)
       
       output$anexa_A <- DT::renderDataTable( DT::datatable(rownames = FALSE,
-                data = vals$anexa_A, options = list(dom = "tp", pageLength=7))  %>% 
+                data = vals$anexa_A, options = list(dom = "fti", paging=FALSE, scrollY = "300px"),
+                caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+                                                  paste0("Anexa A la ", vals$report_date, " :")))  %>% 
                   DT::formatRound(columns = 3:4,digits = 0) %>%
-                                               DT::formatPercentage(columns = 5:6, digits = 1))
+                                DT::formatPercentage(columns = 5:6, digits = 1))
       
       output$down_anexaA <- downloadHandler(filename = function() { paste0("anexaA_", vals$report_date,".csv") },
                     content = function(file) { readr::write_csv(x = vals$anexa_A, file = file ) } )

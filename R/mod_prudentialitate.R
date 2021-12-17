@@ -129,13 +129,15 @@ mod_prudentialitate_server <- function(id, vals){
       
       # Below I calculate and expose tabel1
       observe( {req(vals$report_date,vals$previous_month, vals$previous_year)
-        # Calculate tabel1 vals$tabel1
         
-        vals$tabel1 <- vals$view_baza_solduri %>% dplyr::filter(data_raport == vals$report_date) %>%
+        # I calculate totals for Tip fonduri of tabel1
+        vals_prudent$tabel1 <- vals$view_baza_solduri %>% dplyr::filter(data_raport == vals$report_date) %>%
           dplyr::group_by(Tip_surse, `Tip fonduri`) %>% dplyr::summarise(
             Solduri_luna_raportare = sum(Sold_garantii),
-            Nr_contracte_luna_raportare = sum(Nr_contracte)) %>% dplyr::arrange(desc(Tip_surse), desc(Solduri_luna_raportare)) %>%
-          dplyr::mutate(  Varitie_sold_luna_anterioara = purrr::map2_dbl(
+            Nr_contracte_luna_raportare = sum(Nr_contracte)) %>% 
+            dplyr::arrange(desc(Tip_surse), desc(Solduri_luna_raportare)) %>%
+          dplyr::mutate(  rank = dplyr::cur_group_id(),
+            Variatie_sold_luna_anterioara = purrr::map2_dbl(
               .x = `Tip fonduri`,       .y = Solduri_luna_raportare,
               .f = ~ (.y /sum(vals$view_baza_solduri$Sold_garantii[vals$view_baza_solduri$`Tip fonduri` == .x &
                              vals$view_baza_solduri$data_raport == vals$previous_month])) - 1 ),
@@ -169,15 +171,45 @@ mod_prudentialitate_server <- function(id, vals){
                            stringr::str_replace_all(string = .,  pattern = "INVEST",replacement = "IMM INVEST" ) %>%
                            stringr::str_replace_all(string = .,  pattern = "AGRO",  replacement = "IMM AGRO"))
         
+        # I calculate totals for Tip_surse of tabel1
+        vals_prudent$tabel1_totals <- vals$view_baza_solduri %>% dplyr::filter(data_raport == vals$report_date) %>%
+          dplyr::group_by(Tip_surse) %>% dplyr::mutate(rank = dplyr::cur_group_id()) %>%
+          dplyr::summarise(
+            Solduri_luna_raportare = sum(Sold_garantii), Nr_contracte_luna_raportare = sum(Nr_contracte)) %>% 
+          dplyr::arrange(desc(Tip_surse)) %>%  dplyr::mutate(
+            Variatie_sold_luna_anterioara = purrr::map2_dbl( .x = Tip_surse, .y = Solduri_luna_raportare,
+              .f = ~ (.y / sum(vals$view_baza_solduri$Sold_garantii[vals$view_baza_solduri$Tip_surse == .x &
+                vals$view_baza_solduri$data_raport == vals$previous_month])) - 1),
+            Variatie_sold_an_anterior = purrr::map2_dbl( .x = Tip_surse, .y = Solduri_luna_raportare,
+              .f = ~ (.y /sum(vals$view_baza_solduri$Sold_garantii[vals$view_baza_solduri$Tip_surse == .x &
+                          vals$view_baza_solduri$data_raport == vals$previous_year])) -1),
+            Variatie_contracte_luna_anterioara = purrr::map2_dbl(.x = Tip_surse,.y = Nr_contracte_luna_raportare,
+                .f = ~(.y / sum(vals$view_baza_solduri$Nr_contracte[vals$view_baza_solduri$Tip_surse == .x &
+                      vals$view_baza_solduri$data_raport == vals$previous_month])) -1),
+            Variatie_contracte_an_anterior = purrr::map2_dbl( .x = Tip_surse,.y = Nr_contracte_luna_raportare,
+                .f = ~(.y / sum(vals$view_baza_solduri$Nr_contracte[vals$view_baza_solduri$Tip_surse == .x &
+                      vals$view_baza_solduri$data_raport == vals$previous_year])) -1),
+            `Tip fonduri` = paste0(Tip_surse, " din care: ")) %>% dplyr::left_join(
+              y = vals_prudent$tabel1 %>% dplyr::group_by(Tip_surse) %>% 
+                            dplyr::summarise(rank = max(rank)), by = "Tip_surse")
+          
+        
+        # Final assembly of tabel1
+        vals$tabel1 <- dplyr::bind_rows(vals_prudent$tabel1_totals,vals_prudent$tabel1 ) %>% 
+          dplyr::arrange(desc(rank), desc(Solduri_luna_raportare)) %>% dplyr::select(-Tip_surse, -rank) %>% 
+          dplyr::relocate(`Tip fonduri`, .before = Solduri_luna_raportare)
+       
+        
         output$tabel1 <- DT::renderDataTable(  { req(vals$tabel1) 
-          DT::datatable(data = vals$tabel1,options = list(dom = "Bt", pageLength = nrow(vals$tabel1), buttons = c("copy","excel")),
+          DT::datatable(data = vals$tabel1,options = list(dom = "Bftip", paging=FALSE, scrollY = "300px",
+                                      buttons = c("copy","excel", "csv")),
               rownames = F, caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
                           "Tabelul 1 – Evolutia soldurilor de garantii:"),extensions = "Buttons",
-              colnames = c("Tip sursa", "Tip fonduri",paste0("Solduri ", vals$report_date),paste0("Nr contracte ",vals$report_date),
+              colnames = c("Tip fonduri",paste0("Solduri ", vals$report_date),paste0("Nr contracte ",vals$report_date),
                            paste0("Variatia sold fata de ", vals$previous_month),paste0("Variatie sold fata de ",vals$previous_year),
                            paste0("Variatie nr contracte fata de ",vals$previous_month),
                            paste0('Variatie nr contracte fata de ', vals$previous_year))) %>%
-            DT::formatRound(columns = 3:4,digits = 0) %>% DT::formatPercentage(columns = 5:8,digits = 1)
+            DT::formatRound(columns = 2:3,digits = 0) %>% DT::formatPercentage(columns = 4:7,digits = 2)
         })
         
        

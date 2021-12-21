@@ -43,10 +43,10 @@ app_server <- function( input, output, session ) {
       vals$sidebar_selected <- c(vals$sidebar_selected,"new_rating") }
     
     
-    if (sum("lista_banci" == vals$sidebar_selected)==1) {
+    if (sum("banci" == vals$sidebar_selected)==1) {
       mod_rating_database_server("rating_database_ui_1", vals)
       
-      vals$sidebar_selected <- c(vals$sidebar_selected,"lista_banci") }
+      vals$sidebar_selected <- c(vals$sidebar_selected,"banci") }
     
     if (sum("admin" == vals$sidebar_selected)==1) {
       mod_admin_server("admin_ui_1", vals)

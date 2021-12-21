@@ -41,20 +41,12 @@ mod_sidebar_server <- function(id, vals) {
           icon = icon("product-hunt")  )   ,
       hr(),
       
-     bs4Dash::menuItem(
-        tabName = "banci",
-        text = "Banci - Clasa de Risc",
-        icon = icon("university"),
-        selected = FALSE,startExpanded = T,
-          
-        bs4Dash::menuSubItem(
-           text = "Lista banci ",
-           tabName = "lista_banci",
-           selected = F,
-            icon = icon("list")  )
-        #,bs4Dash::menuSubItem(text = "Genereaza rating nou ",tabName = "new_rating", selected = F,icon = icon("folder-plus")  )
-        ),
+     bs4Dash::menuItem( tabName = "banci",
+        text = "Banci - Clasa de Risc",   icon = icon("star"),
+        selected = FALSE,startExpanded = F),
+       
       hr(),
+     
       bs4Dash::menuItem(text = "Admin",icon = icon("toolbox"),tabName = "admin",selected = FALSE)
       
      )

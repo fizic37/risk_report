@@ -37,10 +37,10 @@ app_server <- function( input, output, session ) {
     
       vals$sidebar_selected <- c(vals$sidebar_selected,"prudentialitate") }
     
-    if (sum("new_rating" == vals$sidebar_selected)==1) {
-      mod_rating_server("rating_ui_1")
+    if (sum("prima_casa" == vals$sidebar_selected)==1) {
+      callModule(mod_raportare_bnr_server, "raportare_bnr_ui_1")
       
-      vals$sidebar_selected <- c(vals$sidebar_selected,"new_rating") }
+      vals$sidebar_selected <- c(vals$sidebar_selected,"prima_casa") }
     
     
     if (sum("banci" == vals$sidebar_selected)==1) {

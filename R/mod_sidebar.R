@@ -30,16 +30,22 @@ mod_sidebar_server <- function(id, vals) {
         icon = icon("home"),
         selected = F ),
       
-     
-      #bs4Dash::menuItem(tabName = "prudentialitate",  text = "Prudentialitate",
-        #icon = icon("check-square"),selected = T,startExpanded = T,
-        
-        bs4Dash::menuItem(
+      hr(),
+    
+      bs4Dash::menuItem(
           text = "Raport prudentialitate",
           tabName = "prudentialitate",
-          selected = TRUE,
+          selected = FALSE,
           icon = icon("product-hunt")  )   ,
       hr(),
+      
+      bs4Dash::menuItem( text = "BNR raportari",startExpanded = TRUE,
+              tabName = "bnr", selected = TRUE,  icon = icon("bold"),
+          
+          bs4Dash::menuSubItem(text = "Prima Casa",tabName = "prima_casa",
+                               icon = icon("house-user"),selected = TRUE ) ),
+      
+     hr(),
       
      bs4Dash::menuItem( tabName = "banci",
         text = "Banci - Clasa de Risc",   icon = icon("star"),
@@ -47,7 +53,7 @@ mod_sidebar_server <- function(id, vals) {
        
       hr(),
      
-      bs4Dash::menuItem(text = "Admin",icon = icon("toolbox"),tabName = "admin",selected = FALSE)
+      bs4Dash::menuItem(text = "Administrator",icon = icon("tools"),tabName = "admin",selected = FALSE)
       
      )
         

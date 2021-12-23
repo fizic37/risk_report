@@ -30,7 +30,7 @@ mod_plasamente_ui <- function(id){
     width = 12,collapsible = T,collapsed = FALSE,  DT::dataTableOutput(ns("tabel9")) ),
   
   
-    bs4Dash::box(title = "Tabelul 10 - Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM", status = "primary",
+    bs4Dash::box(title = "Tabelul 10 - Evolutia distributiei surselor financiare proprii ale FNGCIMM", status = "primary",
   icon = icon("table"),collapsible = T, collapsed = FALSE, width = 12, DT::dataTableOutput(ns("tabel10")))
   
   )
@@ -42,12 +42,14 @@ mod_plasamente_ui <- function(id){
 #' plasamente Server Functions
 #'
 #' @noRd 
-mod_plasamente_server <- function(id, vals){
+mod_plasamente_server <- function(id, vals, vals_balanta){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    balanta_database <- readRDS("R/reactivedata/balanta/balanta_database.rds")
+    #balanta_database <- readRDS("R/reactivedata/balanta/balanta_database.rds")
     
+    #vals_balanta$balanta_database <-  vals_balanta
+      #reactiveValues( balanta_database = balanta_database )
     
     observeEvent(input$box_database_plasamente, { req(any(input$box_database_plasamente$collapsed==FALSE, 
                                                          input$box_database_plasamente$maximized==TRUE))
@@ -61,8 +63,13 @@ mod_plasamente_server <- function(id, vals){
     })
     
    
+    observe( { vals_balanta$balanta_database <- readRDS("R/reactivedata/balanta/balanta_database.rds") } )
+      
+    to_listen <- reactive({ list(vals$report_date, vals_balanta$balanta_database) })
     
-    vals$tabel9 <-  tryCatch(expr = { balanta_database %>% dplyr::filter(data_balanta %in% c(vals$report_date, vals$previous_month, vals$previous_year)) %>%
+    observeEvent( to_listen(), { req( vals$previous_month, vals$previous_year ) 
+      vals$tabel9 <-  tryCatch(expr = { vals_balanta$balanta_database %>% 
+          dplyr::filter(data_balanta %in% c(vals$report_date, vals$previous_month, vals$previous_year)) %>%
       dplyr::group_by(data_balanta,tip_sursa) %>% dplyr::summarise(Expunere = sum(`Solduri finale|Debit`)) %>%
       dplyr::arrange(desc(tip_sursa)) %>%
       tidyr::pivot_wider(names_from = tip_sursa,values_from = Expunere) %>% 
@@ -81,11 +88,11 @@ mod_plasamente_server <- function(id, vals){
             paste0("Sinteza disponbilitati la data de: ", vals$report_date))) %>%
         DT::formatRound(columns = 2:4,digits = 0) %>% DT::formatPercentage(columns = 5,digits = 0) }
     ) 
-      
+    
     
     vals$tabel10 <-  tryCatch(expr = {
-      balanta_database %>% dplyr::filter(
-      data_balanta %in% c(vals$report_date, vals$previous_month, vals$previous_year),
+      vals_balanta$balanta_database %>% dplyr::filter(
+      data_balanta %in% c( vals$report_date, vals$previous_month, vals$previous_year),
       tip_sursa == "Surse_Proprii") %>% dplyr::group_by(data_balanta, tip_plasament) %>% 
       dplyr::summarise(Expunere = sum(`Solduri finale|Debit`)) %>% dplyr::arrange(desc(data_balanta), desc(Expunere)) %>%
       dplyr::mutate(Ponderi = prop.table(Expunere)) %>%
@@ -94,13 +101,15 @@ mod_plasamente_server <- function(id, vals){
       janitor::adorn_totals(where = "row")
     }, error = function(e) {data.frame(tip_plasament = conditionMessage(e),Expunere=NA_integer_,
                           Ponderi=NA_real_) } )
-    
+   
     output$tabel10 <- DT::renderDataTable( { req(vals$tabel10)
       DT::datatable(data = vals$tabel10, rownames = FALSE,
        options = list(dom = "Bt", buttons = c("copy","csv","excel")), extensions = "Buttons",
        caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
           'Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM ') ) %>% DT::formatRound(columns = 2,digits = 0) %>%
          DT::formatPercentage(columns = 3:ncol(vals$tabel10),digits = 1) } )
+   
+    })
     
   })
 }

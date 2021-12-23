@@ -33,17 +33,17 @@ mod_plasamente_upload_ui <- function(id){
 #' plasamente_upload Server Functions
 #'
 #' @noRd 
-mod_plasamente_upload_server <- function(id, vals){
+mod_plasamente_upload_server <- function(id, vals, vals_balanta){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    
+   
     coresp_banci_curente <- readRDS("R/reactivedata/balanta/coresp_banci_curente.rds")
     
     coresp_banci_depozite <- readRDS("R/reactivedata/balanta/coresp_banci_depozite.rds")
     
     vals_balanta_upload <- reactiveValues( nume_obligatorii = c("Simbol cont","Denumire cont",
-                                             "Solduri finale|Debit", "Solduri finale|Credit"), check_banks=TRUE )
+                                "Solduri finale|Debit", "Solduri finale|Credit"), check_banks=TRUE )
     
     updateTabsetPanel(session = session, inputId = 'tab_upload',selected = "Database")
     
@@ -58,8 +58,8 @@ mod_plasamente_upload_server <- function(id, vals){
     
     observeEvent(vals_balanta_upload$all_names,{ req(vals_balanta_upload$all_names == TRUE)
       
-      output$show_balanta_date <- renderUI( dateInput(inputId = session$ns("balanta_date"),
-                                                      label = "Selecteaza data balantei uploadate",value = vals$report_date) )
+      output$show_balanta_date <- renderUI( shinyWidgets::airDatepickerInput(inputId = session$ns("balanta_date"),
+                      label = "Selecteaza data balantei uploadate",value = vals$report_date, autoClose = TRUE) )
       
       
       # I deduct sold credit form sold debit and keep only the new processed sold debit
@@ -103,7 +103,7 @@ mod_plasamente_upload_server <- function(id, vals){
             dplyr::mutate(tip_plasament = ifelse( stringr::str_detect(string = `Denumire cont`,
                                                                       pattern = "mobiliara"),"Gestionari_Cautiuni_Garantii", "Depozite"),
                           tip_sursa = ifelse(stringr::str_detect(string = `Denumire cont`, 
-                                                                 pattern = "MADR|administrare|SAPARD"), "Surse_Administrare", "Surse_Proprii")  )
+                                  pattern = "MADR|administrare|SAPARD"), "Surse_Administrare", "Surse_Proprii")  )
         )  })
       
       titluri <- reactive({
@@ -124,10 +124,11 @@ mod_plasamente_upload_server <- function(id, vals){
                              "SMALL FINANCE", "ROMANIA" ) ) 
         )  })
       
-      trezorerie_detaliat <- reactive({ req(conturi_curente_banci(), conturi_depozite_banci(), titluri() )
-        dplyr::bind_rows(conturi_curente_banci(), conturi_depozite_banci(), titluri() )    })
+      trezorerie_detaliat <- reactive({ req( conturi_curente_banci(), conturi_depozite_banci(), titluri() )
+        dplyr::bind_rows( conturi_curente_banci(), conturi_depozite_banci(), titluri() )    })
+     
       
-      vals_balanta_upload$df_new <- trezorerie_detaliat()
+      vals_balanta_upload$df_new <- trezorerie_detaliat() 
       
       # I do not use it for the moment
       conturi_banci_sinteza <- reactive({ req( trezorerie_detaliat() )
@@ -152,11 +153,6 @@ mod_plasamente_upload_server <- function(id, vals){
       
       output$show_down <- renderUI( { req(conturi_curente_banci(), conturi_depozite_banci())
         downloadLink(session$ns("down_conturi"),label = "Downloadeaza balanta prelucrata", class = "pull-right")  })
-      
-      #output$down_conturi <- downloadHandler(filename = function() {"banci_conturi.csv"},content = function(file) {
-      # readr::write_csv(x = conturi_banci () %>%  dplyr::select(-1) %>%
-      #                  dplyr::group_by(Banca) %>% dplyr::summarise_all(.funs = ~sum(.)) %>%
-      #                 janitor::adorn_totals(where = "row",fill = "-"),file=file)})
       
       output$down_conturi <- downloadHandler(filename = function() { paste0("balanta_",input$balanta_date,".csv") },
                                              content = function(file) { readr::write_csv(x = vals_balanta_upload$df_new, file=file) }    )
@@ -201,7 +197,10 @@ mod_plasamente_upload_server <- function(id, vals){
     # I need a separate observer, because input$date is accessible very late due to the fact that is renderUI  
     
     observeEvent(input$balanta_date,{
-      vals_balanta_upload$df_new <- vals_balanta_upload$df_new %>% dplyr::mutate(data_balanta = input$balanta_date)
+      
+     vals_balanta_upload$df_new <- vals_balanta_upload$df_new %>% dplyr::mutate(data_balanta = input$balanta_date) 
+      
+      
     })  
     
     #Below observer shows missing banks UI for the case when there are new accounting accounts not assigned
@@ -287,12 +286,13 @@ mod_plasamente_upload_server <- function(id, vals){
     })
     
     observeEvent(input$confirm_save,{ req(input$confirm_save == TRUE)
+      
       balanta_database <- readRDS("R/reactivedata/balanta/balanta_database.rds")
       
       vals_balanta_upload$df_old <- balanta_database
       # I don`t need df$new, is already defined above
       #vals_balanta_upload$df_new <- trezorerie_detaliat()
-      vals_balanta_upload$element_id <- as.Date(input$balanta_date)
+      vals_balanta_upload$element_id <- input$balanta_date
       vals_balanta_upload$column_id = "data_balanta"
       vals_balanta_upload$finalise_process_compare_df = FALSE
       
@@ -300,11 +300,16 @@ mod_plasamente_upload_server <- function(id, vals){
     })
     
     observeEvent(vals_balanta_upload$finalise_process_compare_df,{ req(vals_balanta_upload$finalise_process_compare_df == TRUE )
+      
+      vals_balanta$balanta_database <- vals_balanta_upload$df_new_prel
+      
       saveRDS(object = vals_balanta_upload$df_new_prel,file = "R/reactivedata/balanta/balanta_database.rds")
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
                                .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
+      
       vals_balanta_upload$finalise_process_compare_df <- FALSE
+      
     })
     
   })

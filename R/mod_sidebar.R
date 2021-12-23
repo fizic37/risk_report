@@ -40,7 +40,7 @@ mod_sidebar_server <- function(id, vals) {
       hr(),
       
       bs4Dash::menuItem( text = "BNR raportari",startExpanded = TRUE,
-              tabName = "bnr", selected = TRUE,  icon = icon("bold"),
+              tabName = "bnr", selected = FALSE,  icon = icon("bold"),
           
           bs4Dash::menuSubItem(text = "Prima Casa",tabName = "prima_casa",
                                icon = icon("house-user"),selected = FALSE ) ),

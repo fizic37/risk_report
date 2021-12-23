@@ -1,5 +1,5 @@
 R/reactivedata/
 *.docx
 inst/extdata/
-.Rproj.user
+.Rproj.user/
 .Rhistory

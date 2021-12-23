@@ -35,15 +35,15 @@ mod_sidebar_server <- function(id, vals) {
       bs4Dash::menuItem(
           text = "Raport prudentialitate",
           tabName = "prudentialitate",
-          selected = FALSE,
+          selected = TRUE,
           icon = icon("product-hunt")  )   ,
       hr(),
       
       bs4Dash::menuItem( text = "BNR raportari",startExpanded = TRUE,
-              tabName = "bnr", selected = TRUE,  icon = icon("bold"),
+              tabName = "bnr", selected = FALSE,  icon = icon("bold"),
           
           bs4Dash::menuSubItem(text = "Prima Casa",tabName = "prima_casa",
-                               icon = icon("house-user"),selected = TRUE ) ),
+                               icon = icon("house-user"),selected = FALSE ) ),
       
      hr(),
       

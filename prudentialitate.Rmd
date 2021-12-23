@@ -56,13 +56,12 @@ Prezentul raport a fost întocmit pentru conformarea cu prevederile punctului 9.
 
 ```{r}
 flextable::flextable(data = params$tabel1 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Variat"),
-  ~ .x * 100)) %>% dplyr::rename_with(.data = .,.cols = dplyr::everything(),.fn = ~ stringr::str_replace_all( pattern = "_", 
-    string = .x, replacement = " "))) %>% 
-  flextable::colformat_double(j = 5:8, suffix = "%") %>% flextable::colformat_double(j = 3,digits = 0) %>%
-  flextable::theme_vanilla() %>% flextable::width(j = 1,width = 1.2,unit = "in") %>% 
-  flextable::width(j = 2,width = 0.8,unit = "in") %>%
-   flextable::width(j = 3,width = 1.13,unit = "in") %>%
-  flextable::width(j = 4:8,width = 0.75,unit = "in") %>% flextable::width(j = 3,width = 1,unit = "in") %>% flextable::fontsize(j = 4:8,size = 9,part = "header")
+    ~ .x * 100)) %>% dplyr::rename_with(.data = .,.cols = dplyr::everything(),.fn = ~ stringr::str_replace_all( pattern = "_", string = .x, replacement = " "))) %>% 
+flextable::colformat_double(j = 4:7, suffix = "%") %>% flextable::colformat_double(j = 2:3,digits = 0) %>%
+flextable::theme_vanilla() %>%  
+flextable::width(j = 1,width = 1.2,unit = "in") %>%
+flextable::width(j = 2,width = 1.13,unit = "in") %>%
+flextable::width(j = 3:7,width = 0.75,unit = "in") %>% flextable::width(j = 3,width = 1,unit = "in") %>% flextable::fontsize(j = 3:7,size = 9,part = "header")
 
 ```
 
@@ -234,10 +233,9 @@ flextable::flextable(data = params$tabel9 %>% dplyr::mutate(Pondere_Surse_Propri
 
 ```{r}
 
-tryCatch(expr = {
-flextable::flextable(data = params$tabel10 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Pondere"),
-      .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>%  
-    flextable::colformat_double(j = 3:5, suffix = "%",digits = 1) %>%
+tryCatch( expr = {
+  
+flextable::flextable(data = params$tabel10 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Ponderi"), .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% flextable::colformat_double(j = 3:5, suffix = "%",digits = 1) %>%
      flextable::theme_vanilla() %>% flextable::width(j = 1,width = 2,unit = "in") %>% flextable::width(j = 2:5,width = 1.05,unit = "in") }, error = function(e) matrix("Check Tabel 10 in plasamente",nrow = 1,ncol = 5) %>% data.frame() %>% flextable::flextable(data = .) )
  
  
@@ -282,12 +280,11 @@ Evolutia platilor de garanţii acordate pe seama capitalurilor proprii si a cere
 
 ```{r}
 flextable::flextable(data = params$tabel11 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Rata_anualizata"),
-      .fns = ~.x*100)) %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Anul"), ~as.character(.x))) ) %>% 
-  flextable::colformat_char(j = 1) %>%
- flextable::colformat_double(j = c(4,6), suffix = "%",digits = 1) %>%
-  flextable::theme_vanilla() %>% flextable::width(j = 1:2,width = 0.75,unit = "in") %>% 
-  flextable::width(j = 3:4,width = 1,unit = "in") %>% flextable::width(j = 5,width = 1.2,unit = "in") %>%
-  flextable::width(j = 6,width = 1.4,unit = "in")
+.fns = ~.x * 100)) %>% dplyr::mutate( Anul = as.character(Anul) ) ) %>% flextable::colformat_char(j = 1:2) %>%
+flextable::colformat_double(j = c(4,6), suffix = "%",digits = 1) %>%
+flextable::theme_vanilla() %>% flextable::width(j = 1:2,width = 0.75,unit = "in") %>% 
+flextable::width(j = 3:4,width = 1,unit = "in") %>% flextable::width(j = 5,width = 1.2,unit = "in") %>%
+flextable::width(j = 6,width = 1.4,unit = "in")
 ```
 
 <br>  
@@ -314,9 +311,9 @@ Avand in vedere cele prezentate in Raport, se constată că sunt respectate ceri
 In conformitate cu prevederile art 30 lit. h) si art 34 lit. e) din Regulamentul de organizare si functionare aprobat de CA in noiembrie 2020, in vigoare incepand cu 23.11.2020, propunem Raportul spre analiza Comitetului de Administare a Riscurilor si spre informare Comitetului Executiv al FNGCIMM.
 
 ``` {r}
-flextable::flextable(data = data.frame("Director Executiv Direcţia risc" = "Cristina MARINESCU",
-                                       'Întocmit - Şef Serviciu Risc' = 'Marius  TIŢA',check.names = FALSE)) %>%
-  flextable::align(j = 1,align = "left",part = "all") %>% flextable::align(j = 2,align = "right", part = "all") %>%
+flextable::flextable(data = data.frame("Director Executiv Direcţia risc" = c("Cristina MARINESCU","",""),
+          'Şef Serviciu Risc' = c('Marius  TIŢA', 'Întocmit - Expert administrare risc','Mihai Pangrate'),
+          check.names = FALSE) ) %>%  flextable::align(j = 1,align = "left",part = "all") %>% flextable::align(j = 2,align = "right", part = "all") %>%
   flextable::border_inner(border = NULL,part = "all") %>% flextable::width(j = 1:2,width = 3.2,unit = "in") %>%
   flextable::bold(j = 1:2,bold = TRUE,part = "header")
 

@@ -114,6 +114,10 @@ mod_plati_server <- function(id, vals){
       paste0("Data maxima a cererii de plata este: ",max(vals_plati$cereri_plata_database$Data_cerere_plata))
       })
     
+    output$down_cereri_plata <- downloadHandler( filename = function() {"cereri_plata.csv"},content = function(file) {
+      readr::write_csv(x = cereri_plata_database,file = file)   } )
+                                                
+    
     observeEvent(input$cereri_plata_upload,{
       
       tryCatch(expr = {
@@ -203,7 +207,8 @@ mod_plati_server <- function(id, vals){
      
      output$tabel11 <- DT::renderDataTable( {req(vals$tabel11) 
        DT::datatable(data = vals$tabel11, rownames = FALSE,
-                caption = paste0("Tabelul 11 - Plati cumulate ",lubridate::year(vals$report_date) ),
+          caption = htmltools::tags$caption( style = 'caption-side: top; text-align: left;',
+                    paste0("Tabelul 11 - Plati cumulate ",lubridate::year(vals$report_date) ) ),
                   options = list(dom="Bt",buttons=c("copy","excel")), extensions = "Buttons") %>% 
                   DT::formatRound(columns = c(3,5),digits = 0) %>%
                     DT::formatPercentage(columns = c(4,6),digits = 1)  })
@@ -249,6 +254,7 @@ mod_plati_server <- function(id, vals){
       vals_plati$snapshot_bi_plata2 <- readxl::read_excel(input$bi_upload$datapath,range = "bi!I1:J2") %>%
         dplyr::mutate(All = as.Date(All)) %>% dplyr::pull(All)
       
+      
       if (any (vals_plati$snapshot_bi_plata1 <= bi_snapshots$snapshot_bi_plata1, 
                vals_plati$snapshot_bi_plata2 <= bi_snapshots$snapshot_bi_plata2)) {
         output$messages <- renderText("STOP, 
@@ -286,8 +292,8 @@ mod_plati_server <- function(id, vals){
               caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;', 
                   'Sinteza plati uploadate:')) %>%  DT::formatRound(columns = 2, digits = 0)          )
         
-        vals_plati$snapshots <- data.frame(snapshot_bi_plata1 = vals_plati$snapshot_bi_plata1, 
-                                          snapshot_bi_plata2 = vals_plati$snapshot_bi_plata2)
+        vals_plati$snapshots <- data.frame( snapshot_bi_plata1 = vals_plati$snapshot_bi_plata1, 
+                                          snapshot_bi_plata2 = vals_plati$snapshot_bi_plata2 )
         
         vals_plati$plati_database <- bi_upload()
         
@@ -305,8 +311,8 @@ mod_plati_server <- function(id, vals){
     })
     
     observeEvent(input$confirm_save,{ req(input$confirm_save == TRUE)
-      saveRDS(vals_plati$snapshots, "R/reactivedata/plati/bi_snapshots.rds")
-      saveRDS(vals_plati$plati_database, "R/reactivedata/plati/plati_database.rds")
+      saveRDS( vals_plati$snapshots, "R/reactivedata/plati/bi_snapshots.rds")
+      saveRDS( vals_plati$plati_database, "R/reactivedata/plati/plati_database.rds")
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
             .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))

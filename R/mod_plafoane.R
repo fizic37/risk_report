@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_plafoane_ui <- function(id,vals){
+mod_plafoane_ui <- function(id){
   ns <- NS(id)
   tagList(
   bs4Dash::box(title = "Update Plafoane de Garantare Surse proprii si administrare",
@@ -16,7 +16,8 @@ mod_plafoane_ui <- function(id,vals){
   fluidPage( shinyFeedback::useShinyFeedback(),
         fluidRow(
         column(width = 4,
-        uiOutput(ns("show_plafoane_date")),
+        shinyWidgets::airMonthpickerInput(inputId = ns("plafoane_date") ,autoClose=TRUE,
+                        label = "Data plafoanelor", value = Sys.Date()),
        
         shinyWidgets::autonumericInput(inputId = ns("cap_proprii"),label = "Capitaluri proprii",value = 0,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
@@ -66,9 +67,27 @@ mod_plafoane_server <- function(id, vals){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    baza_plafoane <- readRDS("R/reactivedata/solduri/baza_plafoane.rds")
+    baza_plafoane <- readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% dplyr::arrange(desc(data_raport))
     
     vals_plafoane <- reactiveValues(baza_plafoane = baza_plafoane)
+    
+    # Update data plafoane input to vals$report_date only once; I want to let the user the possibility
+    # to choose old plafoane date no matter vals$report_date. I had to add 1 to updated value, a strange behaviour of the function
+    observeEvent( vals$report_date,{
+      shinyWidgets::updateAirDateInput(session = session,inputId = "plafoane_date",
+          value = vals$report_date + 1 )
+      vals_plafoane$plafoane_date <- vals$report_date
+    }, once = TRUE)
+    
+    # Observer for generating vals_plafoane$plafoane_date which is used later. 
+    # When using shinyWidgets::airmonthpicker the selected date is only the first date of the month
+    # Attention: I use ingonreInit = T as the initialisation is handled within observeEvent( vals$report_date
+    
+    observeEvent( input$plafoane_date, {  req(input$plafoane_date != vals$report_date)
+      vals_plafoane$plafoane_date <- lubridate::`%m+%`(input$plafoane_date,months(1) ) -1 
+      
+    }, ignoreInit = TRUE) 
+    
     
     observeEvent(vals_plafoane$baza_plafoane,{
     
@@ -98,10 +117,12 @@ mod_plafoane_server <- function(id, vals){
     output$baza_surse_proprii <- DT::renderDataTable({
         DT::datatable(
         data =  cbind(tibble::tibble(" " = vals_plafoane$actions),vals_plafoane$baza_plafoane  %>% 
-                        dplyr::select(1:4) ),     rownames = F,extensions = "Buttons", escape = FALSE,
+                        dplyr::select(1:4) ),
+        rownames = F,extensions = "Buttons", escape = FALSE,
         caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
                                           "Baza de date a Fondurilor Proprii:"),
-        options = list(dom = "Btp", buttons = c("copy","csv","excel"), pageLength = 5)) %>% DT::formatRound(columns = 2:4,digits = 0) })
+        options = list(dom = "Btp", buttons = c("copy","csv","excel"), pageLength = 5)) %>% 
+          DT::formatRound(columns = 2:4,digits = 0) })
    
     
     # Outputs baza de date a plafoanelor din surse administrare (to the right of the page)
@@ -125,6 +146,7 @@ mod_plafoane_server <- function(id, vals){
       # Si apoi plafoanele anului anterior
       vals_plafoane$plafoane_an_anterior <- vals_plafoane$baza_plafoane %>% 
         dplyr::filter(data_raport ==  vals$previous_year) %>% dplyr::select(-data_raport)
+      
       # Mai jos calculez doar coloana de utilizare a plafoanelor la luna curenta
       
       vals_plafoane$utilizare_plafoane <- vals$view_baza_solduri %>%
@@ -154,7 +176,8 @@ mod_plafoane_server <- function(id, vals){
         dplyr::mutate(Tip_surse = ifelse(Tip_surse == "Surse_proprii",Tip_surse,`Tip fonduri`)) %>% 
           dplyr::group_by(Tip_surse) %>% dplyr::summarise(Plafon_Garantare = mean(Plafon_Garantare),
             Sold_garantii=sum(Sold_garantii)) %>% dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
-              dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$report_date))
+              dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$report_date)) %>%
+                 dplyr::mutate(Tip_surse = as.character(Tip_surse))
       
       # Apoi calculez doar coloana de utilizare a plafoanelor la luna anterioara
       vals_plafoane$utilizare_plafoane_luna_anterioara <-
@@ -188,7 +211,8 @@ mod_plafoane_server <- function(id, vals){
         dplyr::mutate(Tip_surse = ifelse(Tip_surse == "Surse_proprii",Tip_surse,`Tip fonduri`)) %>% 
         dplyr::group_by(Tip_surse) %>% dplyr::summarise(Plafon_Garantare = mean(Plafon_Garantare),
             Sold_garantii=sum(Sold_garantii)) %>% dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>%
-        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$previous_month))
+        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$previous_month)) %>%
+        dplyr::mutate(Tip_surse = as.character(Tip_surse))
       
       # Utilizarea plafoanelor de garantare in anul anterior
       
@@ -223,21 +247,20 @@ mod_plafoane_server <- function(id, vals){
         dplyr::mutate(Tip_surse = ifelse(Tip_surse == "Surse_proprii",Tip_surse,`Tip fonduri`)) %>% 
         dplyr::group_by(Tip_surse) %>% dplyr::summarise(Plafon_Garantare = mean(Plafon_Garantare),
           Sold_garantii=sum(Sold_garantii)) %>% dplyr::mutate(Utilizare_Plafon = Sold_garantii/Plafon_Garantare) %>% 
-        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$previous_year))
+        dplyr::rename_at(.vars = 'Utilizare_Plafon', ~ paste0("Utilizare_Plafon_", vals$previous_year)) %>% 
+          dplyr::mutate(Tip_surse = as.character(Tip_surse))
       
       
       # Asamblez tabelul 3 si utilizarea plafoanelor folosind left join dupa tip surse
       
-     vals$tabel3 <- tryCatch( expr = {vals_plafoane$utilizare_plafoane %>% dplyr::left_join(
+     vals$tabel3 <-  vals_plafoane$utilizare_plafoane %>% dplyr::left_join(
           y = vals_plafoane$utilizare_plafoane_luna_anterioara %>% dplyr::select(-2, -3),
           by = "Tip_surse" ) %>% dplyr::left_join(
           y = vals_plafoane$utilizare_plafoane_an_anterior %>% dplyr::select(-2, -3),
           by = "Tip_surse" ) %>% dplyr::arrange(desc(Plafon_Garantare)) %>% 
         dplyr::mutate(Tip_surse = stringr::str_remove_all(string = Tip_surse, pattern = '[:digit:][:digit:]\\.') %>%
-          stringr::str_trim(string = ., side = "left"))}, error = function(e) {
-            data.frame(Tip_surse="Upload more data",Plafon_Garantare=0,Sold_garantii = 0,Utilizare_Plafon_curent= 0,
-                       Utilizare_Plafon_luna_anterioara=0,Utilizare_plafon_an_anterior=0)
-          } )
+          stringr::str_trim(string = ., side = "left"))
+          
       
       output$utilizare_plafoane <-  DT::renderDataTable(  DT::datatable(  data = vals$tabel3,
             rownames = FALSE,
@@ -271,16 +294,8 @@ mod_plafoane_server <- function(id, vals){
       
     } )
     
-    # Observer to update data plafoane to vals$report_date 
-    output$show_plafoane_date  <- renderUI({ req(vals$report_date) 
-      shinyWidgets::airMonthpickerInput(inputId = ns("plafoane_date") ,autoClose=TRUE,
-      label = "Data plafoanelor", value = lubridate::`%m-%`(vals$report_date,months(1) ) + 1) })
+  
     
-    # Observer for generating vals_plafoane$plafoane_date which is used later.
-    observeEvent(input$plafoane_date,{
-      vals_plafoane$plafoane_date <- lubridate::`%m+%`(input$plafoane_date,months(1) ) -1
-      #shinyjs::disable(id = "save_plafoane", asis = FALSE)     
-      })
     
     # Observer for activating save button when all inputs are greater than zero
     #observe({req(input$cap_proprii > 0, input$impr_subordon > 0,input$fonduri_proprii > 0, input$oug_79 > 0,

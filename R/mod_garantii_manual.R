@@ -63,8 +63,12 @@ mod_garantii_manual_server <- function(id, vals){
     })
     
     observeEvent(input$save_solduri_manuale,{
-      df_manual <- reactive({
-        data.frame(Tip_surse = "Nume_cont_stat", "Tip fonduri" = input$select_program,check.names = FALSE,
+     
+       df_manual <- reactive({ req( input$sold_garantii_input != 0, input$nr_contracte_input != 0,
+                                    input$nr_beneficiari_input != 0,
+                                   input$sold_credit_input != 0 )
+        
+         data.frame(Tip_surse = "Nume_cont_stat", "Tip fonduri" = input$select_program,check.names = FALSE,
                    Nr_contracte = input$nr_contracte_input, Nr_beneficiari = input$nr_beneficiari_input,
                    Sold_garantii = input$sold_garantii_input, 
                    data_raport = as.Date.character(input$data_solduri_manuale),
@@ -72,6 +76,8 @@ mod_garantii_manual_server <- function(id, vals){
                     dplyr::mutate(dplyr::across(.cols = dplyr::contains("Sold"), ~as.numeric(.x))) })
       
       vals_manual$finish_update <- janitor::compare_df_cols_same(df_manual(),vals$view_baza_solduri)
+      
+      
       
       if (vals_manual$finish_update) {
        
@@ -91,10 +97,9 @@ mod_garantii_manual_server <- function(id, vals){
         shinyWidgets::updateAutonumericInput(session = session,inputId = "sold_garantii_input",value = 0)
         shinyWidgets::updateAutonumericInput(session = session,inputId = "nr_contracte_input", value=0)
         shinyWidgets::updateAutonumericInput(session = session,inputId = "nr_beneficiari_input", value=0)
-        shinyWidgets::updateAutonumericInput(session = session,inputId = "sold_credit_input", value=0)
+        shinyWidgets::updateAutonumericInput(session = session,inputId = "sold_credit_input", value=0) 
         
-        
-      }
+       }
       
       else {shinyFeedback::showToast(type = "error",title = "ERROR",message = "Failed to save", keepVisible = F) }
       

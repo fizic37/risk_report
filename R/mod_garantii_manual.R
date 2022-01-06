@@ -68,6 +68,7 @@ mod_garantii_manual_server <- function(id, vals){
                    data_raport = as.Date.character(input$data_solduri_manuale),
                    Sold_credite_garantate = input$sold_credit_input)   })
       
+      browser()
       if (janitor::compare_df_cols_same(df_manual(),vals$view_baza_solduri)) {
         
         vals$view_baza_solduri <- dplyr::bind_rows(df_manual(),vals$view_baza_solduri)

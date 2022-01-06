@@ -66,12 +66,17 @@ mod_garantii_manual_server <- function(id, vals){
                    Nr_contracte = input$nr_contracte_input, Nr_beneficiari = input$nr_beneficiari_input,
                    Sold_garantii = input$sold_garantii_input, 
                    data_raport = as.Date.character(input$data_solduri_manuale),
-                   Sold_credite_garantate = input$sold_credit_input)   })
+                   Sold_credite_garantate = input$sold_credit_input) %>%
+                    dplyr::mutate(dplyr::across(.cols = dplyr::contains("Sold"), ~as.numeric(.x))) })
       
-      browser()
-      if (janitor::compare_df_cols_same(df_manual(),vals$view_baza_solduri)) {
-        
-        vals$view_baza_solduri <- dplyr::bind_rows(df_manual(),vals$view_baza_solduri)
+      
+      if ( janitor::compare_df_cols_same(df_manual(),vals$view_baza_solduri)) {
+       
+       
+        vals$view_baza_solduri <- dplyr::bind_rows(df_manual(), vals$view_baza_solduri %>% 
+                dplyr::mutate(temp_column = ifelse(`Tip fonduri` == input$select_program & 
+                      data_raport == input$data_solduri_manuale,1,0)) %>% dplyr::filter(temp_column==0) %>% 
+                          dplyr::select(-temp_column))
         
         saveRDS(object = vals$view_baza_solduri, file = "R/reactivedata/solduri/view_baza_sold.rds")
         

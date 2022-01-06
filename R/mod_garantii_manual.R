@@ -47,6 +47,8 @@ mod_garantii_manual_server <- function(id, vals){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
+    vals_manual <- reactiveValues(finish_update = FALSE)
+    
     observeEvent(vals$view_baza_solduri,{
     
     updateSelectInput(inputId = 'data_solduri_manuale', session = session,
@@ -69,8 +71,9 @@ mod_garantii_manual_server <- function(id, vals){
                    Sold_credite_garantate = input$sold_credit_input) %>%
                     dplyr::mutate(dplyr::across(.cols = dplyr::contains("Sold"), ~as.numeric(.x))) })
       
+      vals_manual$finish_update <- janitor::compare_df_cols_same(df_manual(),vals$view_baza_solduri)
       
-      if ( janitor::compare_df_cols_same(df_manual(),vals$view_baza_solduri)) {
+      if (vals_manual$finish_update) {
        
        
         vals$view_baza_solduri <- dplyr::bind_rows(df_manual(), vals$view_baza_solduri %>% 
@@ -82,6 +85,8 @@ mod_garantii_manual_server <- function(id, vals){
         
         shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
                 .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
+        
+        vals_manual$finish_update <- FALSE
         
         shinyWidgets::updateAutonumericInput(session = session,inputId = "sold_garantii_input",value = 0)
         shinyWidgets::updateAutonumericInput(session = session,inputId = "nr_contracte_input", value=0)

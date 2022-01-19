@@ -106,7 +106,7 @@ mod_plati_server <- function(id, vals){
     
     plati_database <- readRDS("R/reactivedata/plati/plati_database.rds")
     
-    cereri_plata_database <- readRDS("R/reactivedata/plati/cereri_plata.rds")
+    cereri_plata_database <- readRDS("R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
     
     vals_plati <- reactiveValues(snapshots = bi_snapshots, cereri_plata_database = cereri_plata_database)
     

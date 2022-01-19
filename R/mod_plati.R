@@ -63,14 +63,14 @@ mod_plati_ui <- function(id){
                  )
     ),
     
-    bs4Dash::box(title='Upload excel file for Cereri de plata', collapsible = T,
-                 collapsed = T, maximizable = T, width = 6,icon=icon("file-excel"),
-                 footer = "Se downloadeaza fisierul excel din link-ul atasat, se actualizeaza coloanele DocumentId, 
-                 Data_cerere_plata si cerere_plata se salveaza local si se uploadeaza folosind butonul de mai sus",
+    bs4Dash::box(title='Upload file for Cereri de plata', collapsible = T,
+                 collapsed = T, maximizable = T, width = 6,icon=icon("file"),
+                 footer = "Se downloadeaza fisierul din link-ul atasat, se actualizeaza coloanele DocumentId, 
+                 Data_cerere_plata si cerere_plata, se salveaza local ca excel sau csv si se uploadeaza folosind butonul de mai sus",
                  
                  fluidRow(
                  column(width = 5, fileInput(ns("cereri_plata_upload"),"Upload cereri plata file",
-                                             accept = ".xlsx",buttonLabel = "Excel only",
+                                             accept = ".xlsx",buttonLabel = "CSV or Excel",
                                              placeholder = "Nothing uploaded") ),
                  
                  column(width = 7, br(), verbatimTextOutput(outputId = ns("cereri_plata_messages"))),
@@ -119,12 +119,23 @@ mod_plati_server <- function(id, vals){
                                                 
     
     observeEvent(input$cereri_plata_upload,{
-      
+    
       tryCatch(expr = {
         
-       vals_plati$cereri_plata_read <- readxl::read_excel(input$cereri_plata_upload$datapath) %>% 
-        dplyr::select(DocumentId,`Cod Partener`,Data_cerere_plata,Cerere_Plata) %>%
-          dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
+        if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "csv") {
+          vals_plati$cereri_plata_read <- readr::read_csv(input$cereri_plata_upload$datapath) %>% 
+            dplyr::select(DocumentId,`Cod Partener`,Data_cerere_plata,Cerere_Plata) %>%
+            dplyr::mutate(dplyr::across(.cols = 1:2, ~as.character(.x))) %>%
+            dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
+        }
+        
+        else if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "xlsx" ) {
+          vals_plati$cereri_plata_read <- readxl::read_excel(input$cereri_plata_upload$datapath) %>% 
+            dplyr::select(DocumentId,`Cod Partener`,Data_cerere_plata,Cerere_Plata) %>%
+            dplyr::mutate(dplyr::across(.cols = 1:2, ~as.character(.x))) %>%
+            dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
+        }
+       
       
       if ( janitor::compare_df_cols_same(vals_plati$cereri_plata_read, cereri_plata_database) ) {
         

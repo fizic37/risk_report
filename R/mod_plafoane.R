@@ -21,25 +21,25 @@ mod_plafoane_ui <- function(id){
        
         shinyWidgets::autonumericInput(inputId = ns("cap_proprii"),label = "Capitaluri proprii",value = 0,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
-                                       decimalCharacter = "."  ),
+                                       decimalCharacter = ".", modifyValueOnWheel = FALSE  ),
         shinyWidgets::autonumericInput(inputId = ns("impr_subordon"),label = "Imprumuturi subordonate",value = 0,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
-                                       decimalCharacter = "."  ),
+                                       decimalCharacter = ".", modifyValueOnWheel = FALSE  ),
         shinyWidgets::autonumericInput(inputId = ns("fonduri_proprii"),label = "Fonduri proprii",value = 0,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
-                                       decimalCharacter = "."  ),
+                                       decimalCharacter = ".", modifyValueOnWheel = FALSE  ),
         shinyWidgets::autonumericInput(inputId = ns("oug_79"),label = "OUG 79",value = 467839276,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
                                        decimalCharacter = "."  ),
         shinyWidgets::autonumericInput(inputId = ns("oug_43"),label = "OUG 43",value = 10000000,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
-                                       decimalCharacter = "."  ),
+                                       decimalCharacter = ".", modifyValueOnWheel = FALSE  ),
         shinyWidgets::autonumericInput(inputId = ns("lg_329"),label = "Legea 329",value = 1700000,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
                                        decimalCharacter = "."  ),
         shinyWidgets::autonumericInput(inputId = ns("lg_218"),label = "Legea 218",value = 585607,align = "right",
                                        digitGroupSeparator = ",",decimalPlaces = 0,minimumValue = 0,
-                                       decimalCharacter = "."  ),
+                                       decimalCharacter = ".", modifyValueOnWheel = FALSE  ),
         
         shinyWidgets::actionBttn(inputId = ns("save_plafoane"),icon = icon("save"),color = "primary",
                                  label = "Salveaza datele de mai sus",style = "stretch") ),
@@ -150,7 +150,8 @@ mod_plafoane_server <- function(id, vals){
       # Mai jos calculez doar coloana de utilizare a plafoanelor la luna curenta
       
       vals_plafoane$utilizare_plafoane <- vals$view_baza_solduri %>%
-        dplyr::filter(Tip_surse != "Nume_cont_stat", data_raport == vals$report_date) %>% dplyr::select(1:2, 5) %>%
+        dplyr::filter(Tip_surse != "Nume_cont_stat", data_raport == vals$report_date) %>% 
+        dplyr::select(Tip_surse, `Tip fonduri`,Sold_garantii) %>%
         dplyr::arrange(desc(Tip_surse), desc(Sold_garantii)) %>%
         dplyr::mutate(Plafon_Garantare = ifelse(
           Tip_surse == "Surse_proprii",
@@ -183,7 +184,8 @@ mod_plafoane_server <- function(id, vals){
       vals_plafoane$utilizare_plafoane_luna_anterioara <-
         vals$view_baza_solduri %>%
         dplyr::filter(Tip_surse != "Nume_cont_stat",
-                      data_raport == vals$previous_month) %>% dplyr::select(1:2, 5) %>%
+                      data_raport == vals$previous_month) %>% 
+        dplyr::select(Tip_surse, `Tip fonduri`,Sold_garantii) %>%
         dplyr::arrange(desc(Tip_surse), desc(Sold_garantii)) %>%
         dplyr::mutate(Plafon_Garantare = ifelse(
           Tip_surse == "Surse_proprii",
@@ -219,7 +221,8 @@ mod_plafoane_server <- function(id, vals){
       vals_plafoane$utilizare_plafoane_an_anterior <-
         vals$view_baza_solduri %>%
         dplyr::filter(Tip_surse != "Nume_cont_stat",
-                      data_raport ==  vals$previous_year) %>% dplyr::select(1:2, 5) %>%
+                      data_raport ==  vals$previous_year) %>% 
+        dplyr::select(Tip_surse, `Tip fonduri`,Sold_garantii) %>%
         dplyr::arrange(desc(Tip_surse), desc(Sold_garantii)) %>%
         dplyr::mutate(Plafon_Garantare = ifelse(
           Tip_surse == "Surse_proprii",
@@ -295,8 +298,6 @@ mod_plafoane_server <- function(id, vals){
     } )
     
   
-    
-    
     # Observer for activating save button when all inputs are greater than zero
     #observe({req(input$cap_proprii > 0, input$impr_subordon > 0,input$fonduri_proprii > 0, input$oug_79 > 0,
       #        input$oug_43 > 0,input$lg_329 > 0,input$lg_218 > 0)
@@ -323,13 +324,15 @@ mod_plafoane_server <- function(id, vals){
      })
     
     # Standard observer when calling compare_df module
-    observeEvent(vals_plafoane$finalise_process_compare_df,{ req(vals_plafoane$finalise_process_compare_df == TRUE )
+    observeEvent( vals_plafoane$finalise_process_compare_df,{ req(vals_plafoane$finalise_process_compare_df == TRUE )
     
-      vals_plafoane$baza_plafoane <- vals_plafoane$df_new_prel
+      vals_plafoane$baza_plafoane <- vals_plafoane$df_new_prel %>% dplyr::arrange(desc(data_raport))
+      
       saveRDS(object = vals_plafoane$df_new_prel,file = "R/reactivedata/solduri/baza_plafoane.rds")
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
             .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
+      
       shinyjs::disable(id = "save_plafoane", asis = FALSE)
     })
     

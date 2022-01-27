@@ -28,7 +28,6 @@ params:
 knitr::opts_chunk$set(echo = FALSE,size = "large")
 flextable::set_flextable_defaults(digits = 0, big.mark = ",",font.family = "times")
 library(magrittr)
-
 ```
 
 # Raport privind încadrarea activitatii FNGCIMM- S.A. - IFN in indicatorii de prudentialitate la data de `r params$luna_curenta`  
@@ -235,8 +234,12 @@ flextable::flextable(data = params$tabel9 %>% dplyr::mutate(Pondere_Surse_Propri
 
 tryCatch( expr = {
   
-flextable::flextable(data = params$tabel10 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Ponderi"), .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% flextable::colformat_double(j = 3:5, suffix = "%",digits = 1) %>%
-     flextable::theme_vanilla() %>% flextable::width(j = 1,width = 2,unit = "in") %>% flextable::width(j = 2:5,width = 1.05,unit = "in") }, error = function(e) matrix("Check Tabel 10 in plasamente",nrow = 1,ncol = 5) %>% data.frame() %>% flextable::flextable(data = .) )
+ 
+flextable::flextable(data = params$tabel10 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Ponderi"), .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% 
+    flextable::colformat_double(j = if (sum(stringr::str_detect( string = names(params$tabel10), pattern = "Ponderi")) == 0)
+              0  else stringr::str_which(string = names(params$tabel10), pattern = "Ponderi"), suffix = "%",digits = 1) %>%
+     flextable::theme_vanilla() %>% flextable::width(j = 1,width = 2,unit = "in") %>% flextable::width(j = if (sum(stringr::str_detect( string = names(params$tabel10), pattern = "Ponderi|Expunere")) == 0)
+              0  else stringr::str_which(string = names(params$tabel10), pattern = "Ponderi|Expunere"),width = 1.05,unit = "in") }, error = function(e) matrix("Check Tabel 10 in plasamente",nrow = 1,ncol = 5) %>% data.frame() %>% flextable::flextable(data = .) )
  
  
 
@@ -294,9 +297,21 @@ flextable::width(j = 6,width = 1.4,unit = "in")
 
 <br>  
 
+
+
 *Tabelul 12 – Evoluţia indicatorilor de lichidtate şi solvabilitate*
 
-<br>  
+
+```{r}
+
+tibble::tibble(Indicator = c("Solvabilitate", "Lichiditate"), LunaCurenta= rep("",2), 
+  LunaAnterioara =  rep("",2),
+  AnAnterior = rep("",2) ) %>%
+  flextable::flextable() %>% flextable::theme_vanilla()
+
+```
+
+<br>
 
 
 Cei doi indicatori se încadrează in limitele stabilite prin intermediul Normei de management al activelor şi pasivelor, 12% pentru solvabilitate, respectiv 1 pentru indicatorul de lichiditate.

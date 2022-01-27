@@ -105,20 +105,22 @@ mod_plasamente_server <- function(id, vals, vals_balanta){
     }, error = function(e) { data.frame(tip_plasament = conditionMessage(e),Expunere=NA_integer_,
                           Ponderi=NA_real_) } )
     
- 
-    output$tabel10 <- DT::renderDataTable( { req(vals$tabel10)
-      DT::datatable(   data = vals$tabel10,
-        rownames = FALSE, options = list(dom = "Bt", buttons = c("copy", "csv", "excel")),
-        extensions = "Buttons", caption = htmltools::tags$caption(
-          style = 'caption-side: top; text-align: left;','Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM ')) %>%
-        DT::formatRound(columns = ifelse( sum(
-        stringr::str_detect(string = names(vals$tabel10), pattern = "Expunere") ) == 0, 0, which(
-        stringr::str_detect(string = names(vals$tabel10), pattern = "Expunere"))), digits = 0) %>%
-        DT::formatPercentage(columns = ifelse( sum(
-        stringr::str_detect(string = names(vals$tabel10), pattern = "Ponderi") ) == 0, 0, which(
-        stringr::str_detect(string = names(vals$tabel10), pattern = "Ponderi")  )), digits = 1) 
-      } )
-   
+     
+      output$tabel10 <- DT::renderDataTable({ req(vals$tabel10)
+        DT::datatable(  data = vals$tabel10,rownames = FALSE,
+          options = list(dom = "Bt", buttons = c("copy", "csv", "excel")), extensions = "Buttons",
+          caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+            'Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM ') ) %>%
+          DT::formatRound(
+            columns = if (sum(stringr::str_detect( string = names(vals$tabel10), pattern = "Expunere")) == 0)
+              0 else stringr::str_which(string = names(vals$tabel10), pattern = "Expunere"),
+            digits = 0) %>% DT::formatPercentage(
+            columns = if (sum(stringr::str_detect(
+              string = names(vals$tabel10), pattern = "Ponderi")) == 0)
+              0  else stringr::str_which(string = names(vals$tabel10), pattern = "Ponderi"),
+            digits = 1)
+      })
+      
     })
     
   })

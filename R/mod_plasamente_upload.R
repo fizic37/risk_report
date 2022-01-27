@@ -29,7 +29,7 @@ mod_plasamente_upload_ui <- function(id){
              ))
   
 }
-    
+
 #' plasamente_upload Server Functions
 #'
 #' @noRd 
@@ -37,13 +37,13 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-   
+    
     coresp_banci_curente <- readRDS("R/reactivedata/balanta/coresp_banci_curente.rds")
     
     coresp_banci_depozite <- readRDS("R/reactivedata/balanta/coresp_banci_depozite.rds")
     
     vals_balanta_upload <- reactiveValues( nume_obligatorii = c("Simbol cont","Denumire cont",
-                                "Solduri finale|Debit", "Solduri finale|Credit"), check_banks=TRUE )
+                      "Solduri finale|Debit", "Solduri finale|Credit"), check_banks=TRUE )
     
     updateTabsetPanel(session = session, inputId = 'tab_upload',selected = "Database")
     
@@ -59,7 +59,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
     observeEvent(vals_balanta_upload$all_names,{ req(vals_balanta_upload$all_names == TRUE)
       
       output$show_balanta_date <- renderUI( shinyWidgets::airDatepickerInput(inputId = session$ns("balanta_date"),
-                      label = "Selecteaza data balantei uploadate",value = vals$report_date, autoClose = TRUE) )
+                                                                             label = "Selecteaza data balantei uploadate",value = vals$report_date, autoClose = TRUE) )
       
       
       # I deduct sold credit form sold debit and keep only the new processed sold debit
@@ -103,7 +103,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
             dplyr::mutate(tip_plasament = ifelse( stringr::str_detect(string = `Denumire cont`,
                                                                       pattern = "mobiliara"),"Gestionari_Cautiuni_Garantii", "Depozite"),
                           tip_sursa = ifelse(stringr::str_detect(string = `Denumire cont`, 
-                                  pattern = "MADR|administrare|SAPARD"), "Surse_Administrare", "Surse_Proprii")  )
+                                                                 pattern = "MADR|administrare|SAPARD"), "Surse_Administrare", "Surse_Proprii")  )
         )  })
       
       titluri <- reactive({
@@ -126,7 +126,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
       
       trezorerie_detaliat <- reactive({ req( conturi_curente_banci(), conturi_depozite_banci(), titluri() )
         dplyr::bind_rows( conturi_curente_banci(), conturi_depozite_banci(), titluri() )    })
-     
+      
       
       vals_balanta_upload$df_new <- trezorerie_detaliat() 
       
@@ -198,7 +198,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
     
     observeEvent(input$balanta_date,{
       
-     vals_balanta_upload$df_new <- vals_balanta_upload$df_new %>% dplyr::mutate(data_balanta = input$balanta_date) 
+      vals_balanta_upload$df_new <- vals_balanta_upload$df_new %>% dplyr::mutate(data_balanta = input$balanta_date) 
       
       
     })  
@@ -314,9 +314,9 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
     
   })
 }
-    
+
 ## To be copied in the UI
 # mod_plasamente_upload_ui("plasamente_upload_ui_1")
-    
+
 ## To be copied in the server
 # mod_plasamente_upload_server("plasamente_upload_ui_1")

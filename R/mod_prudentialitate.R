@@ -15,7 +15,7 @@ mod_prudentialitate_ui <- function(id){
   bs4Dash::tabsetPanel( id = ns("raport"),  selected = T,
     shinyjs::useShinyjs(),
     
-    shiny::tabPanel(title = "Solduri Garantii",value = "garantii",icon = icon("arrow-alt-circle-right"),
+    shiny::tabPanel( title = "Solduri Garantii",value = "garantii",icon = icon("arrow-alt-circle-right"),
       tagList(  br(),
               
       bs4Dash::box(title = "Data raport - Foarte important!",status = "primary",width = 12,
@@ -60,7 +60,7 @@ mod_prudentialitate_ui <- function(id){
     shiny::tabPanel(title = "Provizioane plati", icon = icon("dollar-sign"),value = "provizioane_plati",
                     mod_provizioane_ui("provizioane_ui_1")),
     
-    shiny::tabPanel(title = "Plasamente",icon = icon("euro-sign"), value="plasamente", br(),
+    shiny::tabPanel(title = "Plasamente",icon = icon("euro-sign"), value = "plasamente", br(),
                     mod_plasamente_ui("plasamente_ui_1")),
     
     shiny::tabPanel(title = "Plati si cereri plata",icon = icon("paypal"), value="plati", br(),
@@ -99,27 +99,34 @@ mod_prudentialitate_server <- function(id, vals){
     #  server is called.The module server is called once the box is maximized or opened (with plus sign). 
     
     observeEvent(input$box_tabel2, {req(any(input$box_tabel2$collapsed==FALSE, input$box_tabel2$maximized==TRUE))
-      vals$box_selected <-"box_tabel2"
+      
+      vals$box_selected <- c(vals$box_selected,"box_tabel2")
       })
     
     observeEvent(input$box_database_solduri, {req(any(input$box_database_solduri$collapsed==FALSE,
                                                       input$box_database_solduri$maximized==TRUE))
-      vals$box_selected <- "box_database_solduri"
+      
+      vals$box_selected <- c(vals$box_selected,"box_database_solduri")
     })
     
     observeEvent(input$box_upload_solduri, {req( any(input$box_upload_solduri$collapsed==FALSE,
                                                      input$box_upload_solduri$maximized==TRUE) )
-      vals$box_selected <- "box_upload_solduri"
-    })
+      
+      #bs4Dash::updateBox( id = "box_upload_solduri",action = "update",session = session,
+                      #    options = list( collapsible=FALSE, maximizable = FALSE ) )
+      
+      vals$box_selected <- c(vals$box_selected,"box_upload_solduri")
+     
+      
+    } )
     
     observeEvent(input$box_manual_solduri, {req( any(input$box_manual_solduri$collapsed==FALSE, 
                                                      input$box_manual_solduri$maximized == TRUE) )
-      vals$box_selected <- "box_manual_solduri"
+      vals$box_selected <- c(vals$box_selected,"box_manual_solduri")
     })
    
     
-   
-      
+ 
       # Below I assign input$data_prudentialitate to vals$report_date
       observeEvent(input$data_prudentialitate, { 
         
@@ -199,7 +206,6 @@ mod_prudentialitate_server <- function(id, vals){
           dplyr::arrange(desc(rank), desc(Solduri_luna_raportare)) %>% dplyr::select(-Tip_surse, -rank) %>% 
           dplyr::relocate(`Tip fonduri`, .before = Solduri_luna_raportare)
        
-        
         output$tabel1 <- DT::renderDataTable(  { req(vals$tabel1) 
           DT::datatable(data = vals$tabel1,options = list(dom = "Bftip", paging=FALSE, scrollY = "300px",
                                       buttons = c("copy","excel", "csv")),

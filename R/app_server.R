@@ -7,7 +7,7 @@
 app_server <- function( input, output, session ) {
   sidebar_selected <- c()
   box_selected <- c()
-  raport_selected_tab <- "Cap I - Garantii"
+  raport_selected_tab <- c() #"Cap I - Garantii"
   final_report_check <- c()
     
   view_baza_solduri <- readRDS("R/reactivedata/solduri/view_baza_sold.rds")
@@ -15,8 +15,9 @@ app_server <- function( input, output, session ) {
   
   
   vals <- reactiveValues(sidebar_selected = sidebar_selected, view_baza_solduri = view_baza_solduri,
-                         raport_selected_tab = raport_selected_tab, box_selected=box_selected,
-                         final_report_check = final_report_check)
+                         raport_selected_tab = raport_selected_tab, 
+                         box_selected=box_selected,
+                         final_report_check = final_report_check,box_upload_solduri_block = FALSE)
   
   vals_balanta <- reactiveValues()
   
@@ -111,32 +112,33 @@ app_server <- function( input, output, session ) {
   
   observeEvent(vals$box_selected,{ 
     
-    if ( sum("box_database_plasamente" == vals$box_selected)==1 ) { 
+    if ( sum("box_tabel2" == vals$box_selected) == 1 ) { 
+     
+       mod_valute_server("valute_ui_1", vals)  }
+    
+    
+    if ( sum("box_database_solduri" == vals$box_selected) == 1 )  { 
+     
+       mod_garantii_database_server("garantii_database_ui_1", vals)   } 
+    
+    
+    if ( sum("box_upload_solduri" == vals$box_selected) == 1 ) { 
       
-      mod_balanta_database_server("balanta_database_ui_1", vals_balanta)
+      mod_garantii_upload_server("garantii_upload_ui_1", vals)  } 
+    
+    
+    if ( sum("box_manual_solduri" == vals$box_selected) == 1 )  { 
       
-      vals$box_selected <- c(vals$box_selected, "box_database_plasamente") } 
+      mod_garantii_manual_server("garantii_manual_ui_1", vals)  } 
     
-    if ( sum("box_tabel2" == vals$box_selected)==1 ) { mod_valute_server("valute_ui_1", vals)
-      vals$box_selected <- c(vals$box_selected, "box_tabel2") }
-    
-    
-    if ( sum("box_database_solduri" == vals$box_selected)==1 )  { mod_garantii_database_server("garantii_database_ui_1", vals) 
-      vals$box_selected <- c(vals$box_selected, "box_database_solduri") } 
-    
-    
-    if ( sum("box_upload_solduri" == vals$box_selected)==1 ) { 
-      mod_garantii_upload_server("garantii_upload_ui_1", vals)
-      vals$box_selected <- c(vals$box_selected, "box_upload_solduri") } 
-    
-    
-    if ( sum("box_manual_solduri" == vals$box_selected)==1 )  { mod_garantii_manual_server("garantii_manual_ui_1", vals)
-      vals$box_selected <- c(vals$box_selected, "box_manual_solduri") } 
-    
-    if ( sum("box_upload_plasamente" == vals$box_selected)==1 ) { 
-      mod_plasamente_upload_server("plasamente_upload_ui_1", vals, vals_balanta)
+    # I do not know why below 2 boxes need to be selected twice
+    if ( sum("box_database_plasamente" == vals$box_selected) == 2 ) { 
       
-      vals$box_selected <- c(vals$box_selected, "box_upload_plasamente") }
+      mod_balanta_database_server( "balanta_database_ui_1", vals_balanta ) } 
+    
+    if ( sum("box_upload_plasamente" == vals$box_selected) == 2 ) { 
+      
+      mod_plasamente_upload_server("plasamente_upload_ui_1", vals, vals_balanta)  }
       
   })
   

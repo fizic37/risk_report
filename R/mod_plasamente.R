@@ -46,20 +46,22 @@ mod_plasamente_server <- function(id, vals, vals_balanta){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    #balanta_database <- readRDS("R/reactivedata/balanta/balanta_database.rds")
-    
-    #vals_balanta$balanta_database <-  vals_balanta
-      #reactiveValues( balanta_database = balanta_database )
-    
+   
     observeEvent(input$box_database_plasamente, { req(any(input$box_database_plasamente$collapsed==FALSE, 
                                                          input$box_database_plasamente$maximized==TRUE))
-      vals$box_selected <- "box_database_plasamente"
+      
+      vals$box_selected <- c(vals$box_selected,"box_database_plasamente")
       
    })
     
     observeEvent(input$box_upload_plasamente, {req(any(input$box_upload_plasamente$collapsed==FALSE, 
                                                        input$box_upload_plasamente$maximized==TRUE))
-      vals$box_selected <- "box_upload_plasamente"
+     
+      # bs4Dash::updateBox( id = "box_upload_plasamente",action = "update",session = session,
+                      #    options = list(collapsible=FALSE,maximizable = FALSE ) )
+      
+      vals$box_selected <- c(vals$box_selected,"box_upload_plasamente")
+      
     })
     
    
@@ -68,6 +70,7 @@ mod_plasamente_server <- function(id, vals, vals_balanta){
     to_listen <- reactive({ list(vals$report_date, vals_balanta$balanta_database) })
     
     observeEvent( to_listen(), { req( vals$previous_month, vals$previous_year ) 
+      
       vals$tabel9 <-  tryCatch(expr = { vals_balanta$balanta_database %>% 
           dplyr::filter(data_balanta %in% c(vals$report_date, vals$previous_month, vals$previous_year)) %>%
       dplyr::group_by(data_balanta,tip_sursa) %>% dplyr::summarise(Expunere = sum(`Solduri finale|Debit`)) %>%
@@ -89,7 +92,7 @@ mod_plasamente_server <- function(id, vals, vals_balanta){
         DT::formatRound(columns = 2:4,digits = 0) %>% DT::formatPercentage(columns = 5,digits = 0) }
     ) 
     
-    
+   
     vals$tabel10 <-  tryCatch(expr = {
       vals_balanta$balanta_database %>% dplyr::filter(
       data_balanta %in% c( vals$report_date, vals$previous_month, vals$previous_year),
@@ -97,17 +100,24 @@ mod_plasamente_server <- function(id, vals, vals_balanta){
       dplyr::summarise(Expunere = sum(`Solduri finale|Debit`)) %>% dplyr::arrange(desc(data_balanta), desc(Expunere)) %>%
       dplyr::mutate(Ponderi = prop.table(Expunere)) %>%
       tidyr::pivot_wider(names_from = data_balanta,names_sep = "_",values_from = c(Expunere, Ponderi)) %>%
-      dplyr::select(-paste0("Expunere_",vals$previous_month), -paste0("Expunere_",vals$previous_year)) %>%
+        dplyr::select(-dplyr::matches(paste0("Expunere_",vals$previous_month, '|', "Expunere_",vals$previous_year))) %>%
       janitor::adorn_totals(where = "row")
-    }, error = function(e) {data.frame(tip_plasament = conditionMessage(e),Expunere=NA_integer_,
+    }, error = function(e) { data.frame(tip_plasament = conditionMessage(e),Expunere=NA_integer_,
                           Ponderi=NA_real_) } )
-   
+    
+ 
     output$tabel10 <- DT::renderDataTable( { req(vals$tabel10)
-      DT::datatable(data = vals$tabel10, rownames = FALSE,
-       options = list(dom = "Bt", buttons = c("copy","csv","excel")), extensions = "Buttons",
-       caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
-          'Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM ') ) %>% DT::formatRound(columns = 2,digits = 0) %>%
-         DT::formatPercentage(columns = 3:ncol(vals$tabel10),digits = 1) } )
+      DT::datatable(   data = vals$tabel10,
+        rownames = FALSE, options = list(dom = "Bt", buttons = c("copy", "csv", "excel")),
+        extensions = "Buttons", caption = htmltools::tags$caption(
+          style = 'caption-side: top; text-align: left;','Evoluţia distribuţiei surselor financiare proprii ale FNGCIMM ')) %>%
+        DT::formatRound(columns = ifelse( sum(
+        stringr::str_detect(string = names(vals$tabel10), pattern = "Expunere") ) == 0, 0, which(
+        stringr::str_detect(string = names(vals$tabel10), pattern = "Expunere"))), digits = 0) %>%
+        DT::formatPercentage(columns = ifelse( sum(
+        stringr::str_detect(string = names(vals$tabel10), pattern = "Ponderi") ) == 0, 0, which(
+        stringr::str_detect(string = names(vals$tabel10), pattern = "Ponderi")  )), digits = 1) 
+      } )
    
     })
     

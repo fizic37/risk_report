@@ -41,7 +41,8 @@ mod_grupuri_database_server <- function(id, vals){
         
         dplyr::left_join(
           y = baza_grupuri %>% dplyr::filter(Expunere_garantare > 0) %>% dplyr::group_by(data_grupuri) %>%
-            dplyr::summarise(Nr_grupuri_expunere_garantare =  dplyr::n_distinct(GrupId)), by = "data_grupuri")
+            dplyr::summarise(Nr_grupuri_expunere_garantare =  dplyr::n_distinct(GrupId)), by = "data_grupuri") %>%
+        dplyr::arrange(desc(data_grupuri))
       
     })
     

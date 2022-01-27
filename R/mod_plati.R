@@ -101,8 +101,8 @@ mod_plati_server <- function(id, vals){
     output$bi_link <- downloadHandler( filename = function() {"BI_plati.xlsx"},content = function(file) {
       file.copy(from = "R/reactivedata/plati/BI_plati.xlsx",to = file) } )
     
-    output$cereri_plata_link <- downloadHandler( filename = function() {"cereri_plata.csv"},content = function(file) {
-      file.copy(from = "R/reactivedata/plati/cereri_plata.csv",to = file) } )
+    output$cereri_plata_link <- downloadHandler( filename = function() {"cereri_plata.xlsx"},content = function(file) {
+      file.copy(from = "R/reactivedata/plati/cereri_plata.xlsx",to = file) } )
     
     plati_database <- readRDS("R/reactivedata/plati/plati_database.rds")
     
@@ -136,23 +136,34 @@ mod_plati_server <- function(id, vals){
             dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
         }
        
-      
-      if ( janitor::compare_df_cols_same(vals_plati$cereri_plata_read, cereri_plata_database) ) {
+     
+      if ( janitor::compare_df_cols_same( vals_plati$cereri_plata_read, cereri_plata_database) &
+           max(vals_plati$cereri_plata_read$Data_cerere_plata, na.rm=T) >= max(cereri_plata_database$Data_cerere_plata,na.rm=T) ) {
+        
         
         saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
         
         if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "xlsx" ) { 
-          file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx") }
+          file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx", overwrite = T) }
+        
         else if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "csv" ) {
-          file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.csv")      }
+          file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.csv", overwrite = T)      }
         
         vals_plati$cereri_plata_database <- vals_plati$cereri_plata_read
         
         shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
               .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
       }
-      else {  output$cereri_plata_messages <- renderPrint(  janitor::compare_df_cols( vals_plati$cereri_plata_read,
-                                                                    cereri_plata_database,return = "mismatch")) }
+      
+        else if ( any(is.na( vals_plati$cereri_plata_read$DocumentId), is.na(vals_plati$cereri_plata_read$`Cod Partener`),
+                is.na(vals_plati$cereri_plata_read$Data_cerere_plata), is.na(vals_plati$cereri_plata_read$Cerere_Plata)) ) {
+          
+          output$cereri_plata_messages <- renderPrint("Nu pot accepta date lipsa ale DocumentId, Cod Partener, 
+                                                    Data_cerere_plata sau Cerere_Plata")
+        }
+        
+        else {  output$cereri_plata_messages <- renderPrint(  c(janitor::compare_df_cols( vals_plati$cereri_plata_read,
+          cereri_plata_database,return = "mismatch"), "am cereri de plata mai noi in memorie") ) }
       },
       error = function(e) { shinyFeedback::showToast(title = "STOP",message = paste0("ERROR, show it to your administrator: ",e),
                                                       type = "error",keepVisible = T)

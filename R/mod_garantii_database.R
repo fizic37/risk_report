@@ -11,9 +11,13 @@ mod_garantii_database_ui <- function(id){
   ns <- NS(id)
   # This modules handles submenu soldul de garantii under sidebar Prudentialitate - Database Tab
   
-  fluidRow(   shinyjs::useShinyjs(),
-    column( width = 3, selectInput( inputId = ns("date_baza_solduri"),
-        label = "Selecteaza data raportului",  choices = c() )  ),
+  fluidRow(   
+    shinyjs::useShinyjs(),
+    
+    column( width = 3, shinyWidgets::airDatepickerInput(inputId = ns("date_baza_solduri"),
+            label = "Selecteaza data raportului",value = Sys.Date(),autoClose = TRUE,language = "ro") ),
+            
+          
     column(width = 3),
     column( width = 6,  br(),    downloadLink(outputId = ns("down_solduri"),
                    label = "Download tabelul de mai jos in format detaliat")),
@@ -34,10 +38,11 @@ mod_garantii_database_server <- function(id, vals){
     #updates selecion dates of the table according to what exists in file (vals$view_baza_solduri - first read inside app.server)
     # It also renders the table as it depends to the observed event - vals$view_baza_solduri
     
-    observeEvent(vals$view_baza_solduri,{
-      updateSelectInput(inputId = 'date_baza_solduri',  session = session,
-      choices = vals$view_baza_solduri$data_raport %>% unique() %>% sort(decreasing = TRUE) )
+    observeEvent( vals$view_baza_solduri,{
       
+      shinyWidgets::updateAirDateInput(inputId = 'date_baza_solduri',  session = session,
+              value = max(vals$view_baza_solduri$data_raport, na.rm = T) +1 )
+     
       output$baza_date_solduri <- DT::renderDataTable(
         DT::datatable(data = vals$view_baza_solduri %>%
                         dplyr::filter(data_raport == input$date_baza_solduri)  %>%

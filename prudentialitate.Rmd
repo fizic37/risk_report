@@ -36,6 +36,8 @@ library(magrittr)
 
 *DIRECTIA EMITENTA: DIRECTIA RISC*
 
+\newpage
+
 <style type="text/css">
   body{
   font-size: 12pt;

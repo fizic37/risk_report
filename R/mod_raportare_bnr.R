@@ -13,6 +13,8 @@ mod_raportare_bnr_ui <- function(id){
   
   fluidPage(
     
+    shinybusy::add_busy_spinner(  color = "#ff007b",    position = "bottom-right",    timeout = 200 ),
+    
   bs4Dash::tabBox(width = 12,  
                   tabPanel(title = "Upload files",icon = icon("upload"),
     fluidRow(
@@ -21,10 +23,11 @@ mod_raportare_bnr_ui <- function(id){
         footer = "Se downloadeaza modelul de BI folosind link-ul, se actualizeaza corespunzator snapshot-ul si se filtreaza
                              luna de raportare. Fisierul astfel salvat se uploadeaza folosind butonul dedicat.",
     fluidRow(      
-        column(width = 6,fileInput(inputId = ns("bi_pc_input"),accept = c(".xlsx",".xls"),width = "300px",
+        column(width = 4,fileInput(inputId = ns("bi_pc_input"),accept = c(".xlsx",".xls"),width = "300px",
                   label = "Upload BI acordari",buttonLabel = "Excel only",placeholder = "no file uploaded")),
-        column(width = 6, br(),downloadLink(outputId = ns("link_bi_pc_acordari"), 
-          label = "Downloadeaza modelul de BI acordari Prima Casa"))
+        column(width = 4, br(),downloadLink(outputId = ns("link_bi_pc_acordari"), 
+          label = "Downloadeaza modelul de BI acordari Prima Casa"),class='down-link-3-column_padding'),
+        column(width = 4, uiOutput(ns("bi_message_upload")))
     ),
     DT::dataTableOutput(ns("bi_prelucrat"))),
     
@@ -55,7 +58,6 @@ mod_raportare_bnr_ui <- function(id){
                 animation = "rotate") ),
       
       
-    
       column(width = 12,  DT::dataTableOutput(outputId = ns("sold_pc_prelucrat")), br() ), 
     
    
@@ -140,46 +142,51 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
       tr(lapply(c('Numar Solicitari','Finantare RON','Garantie RON',
                  'Numar Solicitari','Finantare RON','Garantie RON'), th)))))
   
-  observeEvent( input$pc_date, {  
-    sold_reactiv$pc_date <- lubridate::`%m+%`(input$pc_date,months(1) ) -1  }) 
- 
-  observeEvent(input$save_pc, {
-    shinyWidgets::ask_confirmation(ns("confirm_save"),
-        text = "Esti sigur ca vrei sa salvezi datele uploadate? Garantiile nu vor fi salvate detaliat.",
-        btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
-  } )
-  
-  observeEvent(input$confirm_save,{ req(input$confirm_save == TRUE)
+  observeEvent( input$bi_pc_input,{
     
-    sold_reactiv$new_pc_sold <- data.frame( Tip_surse = "Nume_cont_stat", "Tip fonduri" = "Prima Casa",check.names = FALSE,
-          Nr_contracte = sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_CG`) + 
-                sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_PG`),
-          Sold_garantii = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_CG`) + 
-                      sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_PG`), 
-          data_raport = sold_reactiv$pc_date,
-          Sold_credite_garantate = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_CG`) + 
-            sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_PG`)) %>% 
-      dplyr::mutate(Nr_beneficiari = Nr_contracte) %>%
-          dplyr::mutate( dplyr::across(.cols = dplyr::contains("Sold"), ~as.numeric(.x))) %>% 
-              dplyr::mutate( dplyr::across(.cols = dplyr::contains("Nr_"), ~as.integer(.x)))
+    nume_obligatorii_bi <- c("Nume Banca", "TipDocument", "Numar Solicitari", "Finantare RON","Garantie RON")
     
-   sold_reactiv$ok_save <- janitor::compare_df_cols_same( sold_reactiv$new_pc_sold ,vals$view_baza_solduri)
-   
-   if ( sold_reactiv$ok_save ) {
-     
-     vals$view_baza_solduri <- dplyr::bind_rows( sold_reactiv$new_pc_sold, vals$view_baza_solduri %>% 
-          dplyr::mutate(temp_column = ifelse(`Tip fonduri` == "Prima Casa" & 
-               data_raport == input$pc_date,1,0)) %>% dplyr::filter(temp_column==0) %>% 
-                                                dplyr::select(-temp_column))
+    bi_reactiv <- reactiveValues(nume_obligatorii=nume_obligatorii_bi)
     
-     saveRDS(object = vals$view_baza_solduri, file = "R/reactivedata/solduri/view_baza_sold.rds")
-     
-     shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
-          .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
-     
-     sold_reactiv$ok_save <- FALSE
-   }
-   else { shinyFeedback::showToast(type = "error",title = "ERROR",message = "Failed to save", keepVisible = F) }
+    bi_reactiv$file_input <-  input$bi_pc_input$datapath
+    
+    mod_read_excel_server("read_excel_ui_1", excel_reactive = bi_reactiv)
+    
+    output$bi_message_upload <- renderUI( {
+      shiny::validate( shiny::need( bi_reactiv$all_names==TRUE,message = paste("STOP, am nevoie de urmatoarele coloane:",
+          paste0( bi_reactiv$missing_names,collapse = "; " ))))
+      h5("BI successfully uploaded", style="color:#00fbff;margin-top: 31px; margin-left: 30px;")
+    } )
+    
+    observe({ req(bi_reactiv$all_names==TRUE)
+      bi_reactiv$fisier_prelucrat <- bi_reactiv$file_read_prel %>% dplyr::filter(`Nume Banca` != "Grand Total") %>% 
+        dplyr::left_join(coresp_banci_bi, by = c("Nume Banca" = "Banca_BI")) %>% 
+        dplyr::select(-`Nume Banca`) %>%
+        dplyr::mutate(TipDocument = ifelse(stringr::str_detect(TipDocument,pattern = "Promisiune"),
+                                           "PG","CG")) %>%
+        tidyr::pivot_wider(names_from = TipDocument, values_from = c(`Numar Solicitari`,`Finantare RON`,
+                                                                     `Garantie RON`),values_fn = sum,values_fill=0) %>% 
+        dplyr::select(-dplyr::contains("_NA")) %>% 
+        dplyr::group_by(Banca_Raport_BNR) %>% dplyr::summarise_all(.funs = ~sum(.)) %>% 
+        dplyr::rename_at(.vars = 1,.funs = ~c("Finantator")) %>%
+        dplyr::select(Finantator,dplyr::contains("CG"),dplyr::contains("PG")) %>% 
+        dplyr::arrange(desc(`Garantie RON_CG`)) %>%
+        janitor::adorn_totals(where = "row",na.rm = TRUE,name = "Total") 
+      
+      output$bi_prelucrat <- DT::renderDataTable({ req(bi_reactiv$fisier_prelucrat)
+        
+        DT::datatable( data = bi_reactiv$fisier_prelucrat, rownames = FALSE,
+                       options = list(dom = "Bt",paging = FALSE, scrollY = "300px",
+                                      buttons=c("copy","excel") ), container = sketch_bi,extensions = "Buttons",
+                       caption =  htmltools::tags$caption(  style = 'caption-side: top; text-align: left;',
+                                                            "Garantii acordate Prima Casa") )  %>%
+          DT::formatRound(columns = 2:7,digits = 0)  })
+      
+      file.copy( from = input$bi_pc_input$datapath, to = "R/reactivedata/pc/bi_acordari.xlsx",overwrite = TRUE)
+      
+      
+    })
+    
   } )
   
   observeEvent( input$sold_pc_pivot_input,{
@@ -189,7 +196,12 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
     
     mod_read_excel_server("read_excel_ui_1",excel_reactive=sold_reactiv)
     
-    output$show_save_pc_sold <- renderUI( { req(sold_reactiv$fisier_prelucrat )
+    
+    output$show_save_pc_sold <- renderUI( { #req(sold_reactiv$fisier_prelucrat )
+     
+      shiny::validate(shiny::need(sold_reactiv$all_names==TRUE,message = paste("STOP, am nevoie de urmatoarele coloane:",
+                            paste0(sold_reactiv$missing_names,collapse = "; "))))
+      
       shinyWidgets::actionBttn(inputId = session$ns("save_pc"),color = "primary",
                                label = "Save Prima Casa above",icon = icon("save"),style = "stretch") })
     
@@ -213,7 +225,7 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
         #janitor::adorn_totals(where = "row",na.rm = TRUE,name = "Total") 
      
        output$sold_pc_prelucrat <- DT::renderDataTable( { req(sold_reactiv$fisier_prelucrat)
-        DT::datatable(data = sold_reactiv$fisier_prelucrat,rownames = FALSE,
+         DT::datatable(data = sold_reactiv$fisier_prelucrat,rownames = FALSE,
             options = list( dom = "Bft", paging = FALSE, scrollY = "300px",
                   buttons=c("copy","excel") ), container = sketch,extensions = "Buttons",
             caption = htmltools::tags$caption( style = 'caption-side: top; text-align: left;',
@@ -223,44 +235,50 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
       })
     
   } )
-    
-  observeEvent(input$bi_pc_input,{
-    
-    nume_obligatorii_bi <- c("Nume Banca", "TipDocument", "Numar Solicitari", "Finantare RON","Garantie RON")
-    
-    bi_reactiv <- reactiveValues(nume_obligatorii=nume_obligatorii_bi)
-    
-    bi_reactiv$file_input <-  input$bi_pc_input$datapath
-    
-    mod_read_excel_server("read_excel_ui_1", excel_reactive = bi_reactiv)
-   
-    observe({ req(bi_reactiv$all_names==TRUE)
-      bi_reactiv$fisier_prelucrat <- bi_reactiv$file_read_prel %>% dplyr::filter(`Nume Banca` != "Grand Total") %>% 
-        dplyr::left_join(coresp_banci_bi, by = c("Nume Banca" = "Banca_BI")) %>% 
-        dplyr::select(-`Nume Banca`) %>%
-        dplyr::mutate(TipDocument = ifelse(stringr::str_detect(TipDocument,pattern = "Promisiune"),
-                                           "PG","CG")) %>%
-        tidyr::pivot_wider(names_from = TipDocument, values_from = c(`Numar Solicitari`,`Finantare RON`,
-              `Garantie RON`),values_fn = sum,values_fill=0) %>% 
-        dplyr::select(-dplyr::contains("_NA")) %>% 
-        dplyr::group_by(Banca_Raport_BNR) %>% dplyr::summarise_all(.funs = ~sum(.)) %>% 
-        dplyr::rename_at(.vars = 1,.funs = ~c("Finantator")) %>%
-        dplyr::select(Finantator,dplyr::contains("CG"),dplyr::contains("PG")) %>% 
-        dplyr::arrange(desc(`Garantie RON_CG`)) %>%
-        janitor::adorn_totals(where = "row",na.rm = TRUE,name = "Total") 
-      
-      output$bi_prelucrat <- DT::renderDataTable({req(bi_reactiv$fisier_prelucrat)
-        DT::datatable( data = bi_reactiv$fisier_prelucrat, rownames = FALSE,
-                      options = list(dom = "Bt",paging = FALSE, scrollY = "300px",
-              buttons=c("copy","excel") ), container = sketch_bi,extensions = "Buttons",
-                      caption =  htmltools::tags$caption(  style = 'caption-side: top; text-align: left;',
-                          "Garantii acordate Prima Casa") )  %>%
-                    DT::formatRound(columns = 2:7,digits = 0)  })
-      
-      file.copy( from = input$bi_pc_input$datapath, to = "R/reactivedata/pc/bi_acordari.xlsx",overwrite = TRUE)  
-      })
-    
+  
+  observeEvent( input$pc_date, {  
+    sold_reactiv$pc_date <- lubridate::`%m+%`(input$pc_date,months(1) ) -1  }) 
+  
+  observeEvent(input$save_pc, {
+    shinyWidgets::ask_confirmation(ns("confirm_save"),
+                                   text = "Esti sigur ca vrei sa salvezi datele uploadate? Garantiile nu vor fi salvate detaliat.",
+                                   btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
   } )
+  
+  observeEvent(input$confirm_save,{ req(input$confirm_save == TRUE)
+    
+    sold_reactiv$new_pc_sold <- data.frame( Tip_surse = "Nume_cont_stat", "Tip fonduri" = "Prima Casa",check.names = FALSE,
+                                            Nr_contracte = sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_CG`) + 
+                                              sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_PG`),
+                                            Sold_garantii = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_CG`) + 
+                                              sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_PG`), 
+                                            data_raport = sold_reactiv$pc_date,
+                                            Sold_credite_garantate = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_CG`) + 
+                                              sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_PG`)) %>% 
+      dplyr::mutate(Nr_beneficiari = Nr_contracte) %>%
+      dplyr::mutate( dplyr::across(.cols = dplyr::contains("Sold"), ~as.numeric(.x))) %>% 
+      dplyr::mutate( dplyr::across(.cols = dplyr::contains("Nr_"), ~as.integer(.x)))
+    
+    sold_reactiv$ok_save <- janitor::compare_df_cols_same( sold_reactiv$new_pc_sold ,vals$view_baza_solduri)
+    
+    if ( sold_reactiv$ok_save ) {
+      
+      vals$view_baza_solduri <- dplyr::bind_rows( sold_reactiv$new_pc_sold, vals$view_baza_solduri %>% 
+                                                    dplyr::mutate(temp_column = ifelse(`Tip fonduri` == "Prima Casa" & 
+                                                                                         data_raport == input$pc_date,1,0)) %>% dplyr::filter(temp_column==0) %>% 
+                                                    dplyr::select(-temp_column))
+      
+      saveRDS(object = vals$view_baza_solduri, file = "R/reactivedata/solduri/view_baza_sold.rds")
+      
+      shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
+                               .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
+      
+      sold_reactiv$ok_save <- FALSE
+    }
+    else { shinyFeedback::showToast(type = "error",title = "ERROR",message = "Failed to save", keepVisible = F) }
+  } )  
+  
+  
     
   
                                 

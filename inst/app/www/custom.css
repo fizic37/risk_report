@@ -4,6 +4,9 @@
 /* Modifica culoarea progress-bar-ului */
   .progress-bar {background-color: #ff007b;}
 
-
+.down-link-3-column_padding {
+  margin-top: 12px;
+  text-align: left;
+}
       
       

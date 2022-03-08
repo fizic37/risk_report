@@ -20,6 +20,10 @@ mod_read_excel_ui <- function(id){
 mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    # I need below function in prder to extract column type
+    get_column_types <- function(names, columns) {
+      if (names%in% names(columns)) columns[[1]] else "guess"
+    }
     
     observeEvent(excel_reactive$file_input,{
       
@@ -44,7 +48,8 @@ mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
       # First read of the excel
       
       excel_first_read <- reactive({req(selected_sheet())
-        readxl::read_excel(excel_reactive$file_input,sheet = selected_sheet(), range = "A1:AA50",.name_repair = "minimal")  })
+        readxl::read_excel(excel_reactive$file_input,sheet = selected_sheet(), range = "A1:AA50",.name_repair = "minimal")
+        })
       
       
       # I get the row index where name if the columns are
@@ -61,6 +66,7 @@ mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
       
       
       observe({req(file_read())
+        
         excel_reactive$all_names <- excel_reactive$nume_obligatorii %in% names(file_read()) %>% all() 
         
         excel_reactive$missing_names <- setdiff(excel_reactive$nume_obligatorii,names(file_read()))
@@ -73,15 +79,18 @@ mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
         
         if (excel_reactive$all_names) {
           
-          if (is.null(excel_reactive$column_names_date)) {
-            excel_reactive$column_types_date <- NULL }
+          #if (is.null(excel_reactive$column_names_date)) {
+           # excel_reactive$column_types <- NULL }
           
-          else { excel_reactive$column_types_date <- purrr::map_chr(names(file_read()),
-                      ~ifelse(.x %in% excel_reactive$column_names_date,"date","guess")) }
+          #else { 
+            excel_reactive$new_column_types <- purrr::map_chr(.x = names(file_read()),
+                                ~get_column_types(names=.x,columns=excel_reactive$colum_types))
+              #purrr::map_chr(names(file_read()),~ifelse(.x %in% excel_reactive$column_names_date,"date","guess")) 
+            #}
           
           
           excel_reactive$file_read_prel <- readxl::read_excel(excel_reactive$file_input,sheet = selected_sheet(), 
-                  skip = index_citire(),col_types = excel_reactive$column_types_date) %>%
+                  skip = index_citire(),col_types = excel_reactive$new_column_types) %>%
             dplyr::select(excel_reactive$coloane_selectate) %>%
             dplyr::mutate_if(.predicate = lubridate::is.POSIXct,.funs = as.Date.POSIXct) %>%
             dplyr::mutate_if(.predicate = lubridate::is.POSIXlt,.funs = as.Date.POSIXlt)

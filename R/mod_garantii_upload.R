@@ -39,18 +39,23 @@ mod_garantii_upload_server <- function(id, vals){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    vals_portof_upload <- reactiveValues( nume_obligatorii = c( "ID Document",
-                                                                'Beneficiar',  'Cod Partener',  'Banca',  'Nr contract',    'Valuta',
-                                                                'Soldul garantiei [in LEI]',    "Data contract",'Soldul creditului [in LEI]',   
-                                                                'Procentul de garantare',   'Tip Fond [centralizat]',    'Tip fonduri','Produs[centralizat]'),
-                                          column_types_date = c("Data contract") )
+    vals_portof_upload <- reactiveValues( nume_obligatorii = c(  "ID Document",
+          'Beneficiar',  'Cod Partener',  'Banca',  'Nr contract',
+          'Valuta',  'Soldul garantiei [in LEI]',
+          "Data contract",    'Soldul creditului [in LEI]',
+          'Procentul de garantare',   'Tip Fond [centralizat]',
+          'Tip fonduri',  'Produs[centralizat]'  ),
+        column_types_date = c("Data contract")
+      )
     
     
     observeEvent(input$upload_solduri,{
       shiny::validate(shiny::need(tools::file_ext(input$upload_solduri$datapath) %in% c("xlsx","xls"),
-                                  message = paste0("XLSX only! You uploaded a ",tools::file_ext(input$upload_solduri$datapath)," file")))
+        message = paste0("XLSX only! You uploaded a ",tools::file_ext(input$upload_solduri$datapath)," file")))
       
       vals_portof_upload$file_input = input$upload_solduri$datapath
+      vals_portof_upload$colum_types <- list("Cod Partener"="text","Data contract"="date",
+            'Soldul garantiei [in LEI]'="numeric", 'Procentul de garantare'="numeric",'ID Document' ="numeric")
       
       mod_read_excel_server("read_excel_ui_1",excel_reactive = vals_portof_upload, red = "#ff007b")
       
@@ -65,16 +70,20 @@ mod_garantii_upload_server <- function(id, vals){
     # Below observer activates after excel module is called and the excel contains all the mandatory column names
     observeEvent(vals_portof_upload$all_names,{ req(vals_portof_upload$all_names == TRUE)
       
-      portofoliu_second_read <<- reactive({  vals_portof_upload$file_read_prel %>%  
-          dplyr::mutate_at(.vars = c( 'Soldul garantiei [in LEI]', 'Procentul de garantare','ID Document' ),
-                           .funs = as.numeric) %>% dplyr::mutate_at(.vars = 'Cod Partener', .funs = as.character) %>%
-          
-          dplyr::mutate(Tip_surse = ifelse(`Tip Fond [centralizat]`=="3. Garantii in nume si cont stat","Nume_cont_stat",
-                                           ifelse(`Tip Fond [centralizat]`== "2. Garantii din surse MADR","Surse_administrare","Surse_proprii"))) %>%
-          # I process an error within excel file
-          dplyr::mutate(Tip_surse = ifelse(is.na(`Tip Fond [centralizat]`) & `Tip fonduri` == "INVEST",
-                                           "Nume_cont_stat",Tip_surse))
-      })
+      portofoliu_second_read <<-  reactive({
+          vals_portof_upload$file_read_prel %>%
+            dplyr::mutate(Tip_surse = ifelse(
+                `Tip Fond [centralizat]` == "3. Garantii in nume si cont stat",  "Nume_cont_stat",
+                ifelse( `Tip Fond [centralizat]` == "2. Garantii din surse MADR",  "Surse_administrare",
+                  "Surse_proprii") ) ) %>%
+            # I process an error within excel file
+            dplyr::mutate(Tip_surse = ifelse(
+              is.na(`Tip Fond [centralizat]`) & `Tip fonduri` == "INVEST",
+              "Nume_cont_stat",
+              Tip_surse
+            ))
+        
+        })
       
       
       sunt_nume_lipsa <- reactive ({ vals_portof_upload$nume_obligatorii %in% names(portofoliu_second_read()) %>% 
@@ -97,7 +106,8 @@ mod_garantii_upload_server <- function(id, vals){
           dplyr::summarise(Nr_contracte = dplyr::n(), Nr_beneficiari = dplyr::n_distinct(`Cod Partener`),
                            Sold_garantii=sum(`Soldul garantiei [in LEI]`), 
                            Sold_credite_garantate = sum(`Soldul creditului [in LEI]`) ) %>%
-          dplyr::arrange(Tip_surse, desc(Sold_garantii))        
+          dplyr::arrange(Tip_surse, desc(Sold_garantii))      
+        
       })
       
       output$sumar_upload <- DT::renderDataTable({ req(sumar_upload())
@@ -125,9 +135,10 @@ mod_garantii_upload_server <- function(id, vals){
     })
     
     observeEvent(input$save_upload,{
+      
       shinyWidgets::ask_confirmation(inputId = session$ns("confirm_save"),title = "Confirm",
-                                     text = "Esti sigur ca vrei sa salvezi datele uploadate? Garantiile de stat nu vor fi salvate detaliat.",
-                                     btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
+              text = "Esti sigur ca vrei sa salvezi datele uploadate? Garantiile de stat nu vor fi salvate detaliat.",
+              btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
       
     })
     

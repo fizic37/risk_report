@@ -21,8 +21,9 @@ mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     # I need below function in prder to extract column type
+    
     get_column_types <- function(names, columns) {
-      if (names%in% names(columns)) columns[[1]] else "guess"
+      if (names%in% names(columns)) columns[[names]] else "guess"
     }
     
     observeEvent(excel_reactive$file_input,{
@@ -87,7 +88,6 @@ mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
                                 ~get_column_types(names=.x,columns=excel_reactive$colum_types))
               #purrr::map_chr(names(file_read()),~ifelse(.x %in% excel_reactive$column_names_date,"date","guess")) 
             #}
-          
           
           excel_reactive$file_read_prel <- readxl::read_excel(excel_reactive$file_input,sheet = selected_sheet(), 
                   skip = index_citire(),col_types = excel_reactive$new_column_types) %>%

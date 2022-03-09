@@ -21,7 +21,8 @@ mod_anexe_ui <- function(id){
                  status = "primary",collapsible = TRUE,collapsed = FALSE,
                  fluidRow(column(width = 4,
                  shinyWidgets::autonumericInput(ns("cap_proprii"),value = 0,align = "right",width = "300px",
-                                         label = "Input fonduri proprii minus subordonate" ) ),
+                                         label = "Input fonduri proprii minus subordonate",modifyValueOnWheel = FALSE,
+                                         digitGroupSeparator = ",",decimalPlaces = 0) ),
                  
                  column(width = 4,br(), div(style="display:inline-block;margin-left: 40%;padding-top: 27px;",
                                   downloadLink(ns("down_anexaA"),"Download Anexa A")) ),
@@ -72,13 +73,13 @@ mod_anexe_server <- function(id, vals){
       vals_anexe$begining_year <- lubridate::make_date(lubridate::year(vals$previous_year),12,31)
       
       vals_anexe$cap_proprii <- readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
-        dplyr::filter(data_raport == vals$report_date) %>% 
+        dplyr::filter(data_raport == vals$report_date) %>% dplyr::slice(1) %>%
         dplyr::mutate(new_col = Fonduri_proprii-Impr_subordon) %>% dplyr::pull(new_col)
       
       shinyWidgets::updateAutonumericInput(session = session,inputId = 'cap_proprii',
                                            value = vals_anexe$cap_proprii)
       
-      if (length(vals_anexe$cap_proprii == 0)) ( shinyjs::disable(id = "cap_proprii") )
+      #if (length(vals_anexe$cap_proprii == 0)) ( shinyjs::disable(id = "cap_proprii") )
       
      
       
@@ -88,7 +89,7 @@ mod_anexe_server <- function(id, vals){
         dplyr::group_by(Banca = DenumireFinantator) %>% dplyr::summarise(Plati = sum(Plata))
       
       vals_anexe$clase_risc <- readRDS("R/reactivedata/banci/sinteza_limite.rds") %>%
-        dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date  )
+        dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date  ) 
     
    
     vals_anexe$solduri_begining_year <- readRDS("R/reactivedata/solduri/baza_banci.rds") %>% 
@@ -136,7 +137,7 @@ mod_anexe_server <- function(id, vals){
     
     vals_anexe$resurse_proprii <- sum(vals_anexe$balanta_proprii$`Solduri finale|Debit`)
     
-
+    
     vals_anexe$anexac <-    dplyr::left_join(   x = vals_anexe$balanta_proprii %>%
           dplyr::filter(tip_plasament %in% c( "Conturi_Curente", "Gestionari_Cautiuni_Garantii","Depozite")  ) %>%  
             dplyr::mutate(Banca = ifelse(Banca == "TREZORERIE", "UNICREDIT", Banca)) %>% 
@@ -147,7 +148,6 @@ mod_anexe_server <- function(id, vals){
           y = vals_anexe$clase_risc  %>% dplyr::select(DenumireFinantator,  ClasaRisc,  LimitaTrezorerie ),
           by = c("Banca" = "DenumireFinantator")  )    
    
-    
     vals_anexe$anexaC_tabel <-  tryCatch(expr = { 
       vals_anexe$anexac %>% tidyr::pivot_wider(names_from = tip_plasament,
               values_from = Expunere, values_fill = 0) %>% dplyr::arrange(ClasaRisc, desc(Depozite)) %>%

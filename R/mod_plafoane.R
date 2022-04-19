@@ -75,7 +75,7 @@ mod_plafoane_server <- function(id, vals){
     # to choose old plafoane date no matter vals$report_date. I had to add 1 to updated value, a strange behaviour of the function
     observeEvent( vals$report_date,{
       shinyWidgets::updateAirDateInput(session = session,inputId = "plafoane_date",
-          value = vals$report_date + 1 )
+          value = vals$report_date )
       vals_plafoane$plafoane_date <- vals$report_date
     }, once = TRUE)
     

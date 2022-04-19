@@ -8,5 +8,7 @@
   margin-top: 12px;
   text-align: left;
 }
-      
+
+
+body > div.wrapper > nav > ul:nth-child(1) > li > a > i {color: #ff007b;}
       

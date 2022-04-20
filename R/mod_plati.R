@@ -77,9 +77,13 @@ mod_plati_ui <- function(id){
                  
                  hr(),
                  
-                 column(width = 12, br(), #div(style="display:inline-block;margin-left: 40%;padding-bottom: 10px;", 
-                              downloadLink(outputId = ns("cereri_plata_link"),
-                                  label = "Click aici pentru a downloada modelul de fisier cereri plata")),
+                 column(width = 6, br(),
+                              downloadLink(outputId = ns("cereri_plata_link_excel"),
+                                  label = "Download modelul Excel de fisier cereri plata")),
+                 
+                 column(width = 6, br(),
+                        downloadLink(outputId = ns("cereri_plata_link_csv"),
+                                     label = "Download modelul CSV de fisier cereri plata")),
                  
                  column(width = 8, DT::dataTableOutput(ns("sinteza_upload_cereri_plata"))),
                  column(width = 4),
@@ -98,17 +102,22 @@ mod_plati_server <- function(id, vals){
     
     bi_snapshots <- readRDS("R/reactivedata/plati/bi_snapshots.rds")
     
-    output$bi_link <- downloadHandler( filename = function() {"BI_plati.xlsx"},content = function(file) {
-      file.copy(from = "R/reactivedata/plati/BI_plati.xlsx",to = file) } )
-    
-    output$cereri_plata_link <- downloadHandler( filename = function() {"cereri_plata.xlsx"},content = function(file) {
-      file.copy(from = "R/reactivedata/plati/cereri_plata.xlsx",to = file) } )
     
     plati_database <- readRDS("R/reactivedata/plati/plati_database.rds")
     
     cereri_plata_database <- readRDS("R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
     
+    
     vals_plati <- reactiveValues(snapshots = bi_snapshots, cereri_plata_database = cereri_plata_database)
+    
+    output$cereri_plata_link_csv <- downloadHandler( filename = function() {"cereri_plata.csv"},content = function(file) {
+      readr::write_csv(x = cereri_plata_database,file = file) } )
+    
+    output$bi_link <- downloadHandler( filename = function() {"BI_plati.xlsx"},content = function(file) {
+      file.copy(from = "R/reactivedata/plati/BI_plati.xlsx",to = file) } )
+    
+    output$cereri_plata_link_excel <- downloadHandler( filename = function() {"cereri_plata.xlsx"},content = function(file) {
+      file.copy(from = "R/reactivedata/plati/cereri_plata.xlsx",to = file) } )
     
     output$show_max_cereri_plata <- renderText({ req(vals_plati$cereri_plata_database)
       paste0("Data maxima a cererii de plata este: ",max(vals_plati$cereri_plata_database$Data_cerere_plata))
@@ -119,29 +128,28 @@ mod_plati_server <- function(id, vals){
                                                 
     
     observeEvent(input$cereri_plata_upload,{
-    
+      
       tryCatch(expr = {
         
-        if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "csv") {
-          vals_plati$cereri_plata_read <- readr::read_csv(input$cereri_plata_upload$datapath) %>% 
+        vals_plati$cereri_plata_read <- switch( EXPR = tools::file_ext(input$cereri_plata_upload$datapath),
+          "csv" = readr::read_csv(input$cereri_plata_upload$datapath) %>% 
             dplyr::select(DocumentId,`Cod Partener`,Data_cerere_plata,Cerere_Plata) %>%
             dplyr::mutate(dplyr::across(.cols = 1:2, ~as.character(.x))) %>%
-            dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
-        }
+            dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x))),
         
-        else if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "xlsx" ) {
-          vals_plati$cereri_plata_read <- readxl::read_excel(input$cereri_plata_upload$datapath) %>% 
+        "xlsx" = readxl::read_excel(input$cereri_plata_upload$datapath,sheet = 1) %>% 
             dplyr::select(DocumentId,`Cod Partener`,Data_cerere_plata,Cerere_Plata) %>%
             dplyr::mutate(dplyr::across(.cols = 1:2, ~as.character(.x))) %>%
             dplyr::mutate(dplyr::across(Data_cerere_plata, ~janitor::convert_to_date(x = .x)))
-        }
-       
+        )
+         
+        
      
       if ( janitor::compare_df_cols_same( vals_plati$cereri_plata_read, cereri_plata_database) &
-           max(vals_plati$cereri_plata_read$Data_cerere_plata, na.rm=T) >= max(cereri_plata_database$Data_cerere_plata,na.rm=T) ) {
+        max(vals_plati$cereri_plata_read$Data_cerere_plata, na.rm=T) >= 
+        max(cereri_plata_database$Data_cerere_plata,na.rm=T) ) {
         
-        
-        saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
+       saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
         
         if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "xlsx" ) { 
           file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx", overwrite = T) }
@@ -213,7 +221,6 @@ mod_plati_server <- function(id, vals){
      sold_inceput_an <- vals$view_baza_solduri %>% dplyr::filter(data_raport==previous_year_end, Tip_surse == 'Surse_proprii') %>%
        dplyr::pull(Sold_garantii) %>% sum()
      
-    
      vals_plati$tabel11_plati <- plati_database %>% dplyr::filter(lubridate::year(data_plata)==lubridate::year(vals$report_date)) %>%  
        dplyr::group_by(Anul=lubridate::year(data_plata),Luna=lubridate::month(data_plata,label = T)) %>% 
        dplyr::summarise(Plati = sum(Plata))  %>% dplyr::mutate(Plati_cumulate=cumsum(Plati)) %>%
@@ -304,7 +311,9 @@ mod_plati_server <- function(id, vals){
           bi_plata2 <- bi_plata2 %>% dplyr::mutate(data_plata = lubridate::make_date(year = as.numeric(Year),
               month = Digit, day=1)) %>%    dplyr::select(Banca=`Cod Finantator Generic`,Plata=Total, data_plata)
           
-         return(dplyr::bind_rows(bi_plata1, bi_plata2))        })
+          file.copy(from = input$bi_upload$datapath,to = "R/reactivedata/plati/BI_plati.xlsx",overwrite = TRUE)
+          
+          return(dplyr::bind_rows(bi_plata1, bi_plata2))        })
         
         
         output$show_save <- renderUI( { req( bi_upload() )
@@ -338,6 +347,8 @@ mod_plati_server <- function(id, vals){
     observeEvent(input$confirm_save,{ req(input$confirm_save == TRUE)
       saveRDS( vals_plati$snapshots, "R/reactivedata/plati/bi_snapshots.rds")
       saveRDS( vals_plati$plati_database, "R/reactivedata/plati/plati_database.rds")
+      
+      file.copy(from = input$bi_upload$datapath,to = "R/reactivedata/plati/BI_plati.xlsx",overwrite = )
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
             .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))

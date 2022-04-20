@@ -23,8 +23,8 @@ mod_garantii_upload_ui <- function(id){
               
               column(width = 3, textOutput(outputId = ns("mesaj_eroare_upload")) ),
               
-              column(width = 3,uiOutput(ns("show_date_upload_sold")) ),
-              column(width = 3,br(), uiOutput(ns("show_save"))),
+              #column(width = 3,uiOutput(ns("show_date_upload_sold")) ),
+              column(width = 6, uiOutput(ns("show_save"))),
               
               br(), br(), hr(),
               DT::dataTableOutput(ns("sumar_upload"))
@@ -55,7 +55,7 @@ mod_garantii_upload_server <- function(id, vals){
       
       vals_portof_upload$file_input = input$upload_solduri$datapath
       vals_portof_upload$colum_types <- list("Cod Partener"="text","Data contract"="date",
-            'Soldul garantiei [in LEI]'="numeric", 'Procentul de garantare'="numeric",'ID Document' ="numeric")
+            "Soldul garantiei [in LEI]"="numeric", "Procentul de garantare"="numeric","ID Document" ="numeric")
       
       mod_read_excel_server("read_excel_ui_1",excel_reactive = vals_portof_upload, red = "#ff007b")
       
@@ -63,12 +63,11 @@ mod_garantii_upload_server <- function(id, vals){
         paste0("STOP, nu am gasit coloanele: ",
                paste(vals_portof_upload$missing_names,collapse = "; ") %>% stringr::str_c())
       })
-      #shinyjs::disable("upload_solduri")
-    })  
+      
     
     
     # Below observer activates after excel module is called and the excel contains all the mandatory column names
-    observeEvent(vals_portof_upload$all_names,{ req(vals_portof_upload$all_names == TRUE)
+    observe({ req(vals_portof_upload$all_names == TRUE)
       
       portofoliu_second_read <<-  reactive({
           vals_portof_upload$file_read_prel %>%
@@ -99,6 +98,7 @@ mod_garantii_upload_server <- function(id, vals){
             lubridate::round_date(unit = "bimonth") -1}, error = function(e) Sys.Date() )
       })
       
+      
       sumar_upload <- reactive({ req(portofoliu_second_read())
         portofoliu_second_read() %>% dplyr::mutate("Tip fonduri" = 
                                                      ifelse(`Tip fonduri`=="01.Fd. proprii",`Produs[centralizat]`,`Tip fonduri`)) %>% 
@@ -118,21 +118,35 @@ mod_garantii_upload_server <- function(id, vals){
                                                         paste0("Sumar date uploadate la ", input$data_upload_sold))) %>%
           DT::formatRound(columns = 3:6,digits = 0) })
       
-      
-      
-      output$show_save <- renderUI({ req(portofoliu_second_read())
-        actionLink(inputId = session$ns("save_upload"),width = "320px",
-                   label = "Click aici pentru a salva datele uploadate",icon = icon("save")) })
-      
-      output$show_date_upload_sold <- renderUI({ req(date_upload_file())
-        
-        #dateInput(inputId = session$ns("data_upload_sold"),value = date_upload_file(),
-        #label = "Selecteaza data portofoliului uploadat",autoclose = TRUE)
-        shinyWidgets::airDatepickerInput(inputId = session$ns("data_upload_sold"),value = date_upload_file(),language = "ro",
-                                         label = "Selecteaza data portofoliului uploadat",view = "months",autoClose = T)
+      missing_fonduri <- reactive({ req(vals_portof_upload$file_read_prel)
+        any(c(is.na(vals_portof_upload$file_read_prel$`Tip fonduri`), 
+              "NULL" %in% vals_portof_upload$file_read_prel$`Tip fonduri`)) %>% 
+          stringr::str_c() # I convert it to text in order for switch statement to work
       })
       
+      output$show_save <- renderUI({ req(portofoliu_second_read(),missing_fonduri())
+        
+        switch(missing_fonduri(),
+               'FALSE' = tagList( 
+                 shinyWidgets::airDatepickerInput(inputId = ns("data_upload_sold"),
+                      value = date_upload_file(),language = "ro",
+                      label = "Selecteaza data portofoliului uploadat",view = "months",autoClose = T,width = "320px"),
+                 br(), 
+                 actionLink(inputId = ns("save_upload"),
+                            label = "Click aici pentru a salva datele uploadate",icon = icon("save") )),
+               'TRUE' =  shinyWidgets::actionBttn(inputId = ns("message_error"),color = "danger",style="stretch",
+                  label = "STOP, am contracte unde nu am disponibile informatia Tip fonduri. Sterge orice informatii aflate sub
+                    baza de date din excel, salveaza si uploadeaza din nou sau completeaza corespunzator"))
+          
+         })
+      
+      shinyjs::disable(id = "upload_solduri")
+         
+      
     })
+    
+    })
+    
     
     observeEvent(input$save_upload,{
       
@@ -159,24 +173,31 @@ mod_garantii_upload_server <- function(id, vals){
       
     })
     
-    observeEvent(vals_portof_upload$finalise_process_compare_df,{ req(vals_portof_upload$finalise_process_compare_df == TRUE )
+    observeEvent( vals_portof_upload$finalise_process_compare_df,{ req(vals_portof_upload$finalise_process_compare_df == TRUE )
       
-      vals$view_baza_solduri <- portofoliu_second_read() %>% dplyr::mutate("Tip fonduri" = 
-                                                                             ifelse(`Tip fonduri`=="01.Fd. proprii",`Produs[centralizat]`,`Tip fonduri`)) %>% 
+      vals_portof_upload$view_sold_uploadat <- portofoliu_second_read() %>% dplyr::mutate("Tip fonduri" = 
+              ifelse(`Tip fonduri`=="01.Fd. proprii",`Produs[centralizat]`,`Tip fonduri`)) %>% 
         dplyr::group_by(Tip_surse, `Tip fonduri`) %>%
         dplyr::summarise(    Nr_contracte = dplyr::n(),
                              Nr_beneficiari = dplyr::n_distinct(`Cod Partener`),
                              Sold_garantii = sum(`Soldul garantiei [in LEI]`),
                              Sold_credite_garantate = sum(`Soldul creditului [in LEI]`)) %>%
-        dplyr::ungroup() %>% dplyr::mutate(data_raport = input$data_upload_sold) %>%
-        dplyr::bind_rows(vals$view_baza_solduri %>% dplyr::filter(data_raport != input$data_upload_sold))
+        dplyr::ungroup() %>% dplyr::mutate(data_raport = input$data_upload_sold, 
+                                           id_column = paste0(input$data_upload_sold,`Tip fonduri`))
+      vals_portof_upload$view_solduri_prelucrate <- vals$view_baza_solduri %>% 
+        dplyr::mutate(id_column = paste0(data_raport,`Tip fonduri`)) %>%
+          dplyr::filter( !id_column %in% vals_portof_upload$view_sold_uploadat$id_column)
+      
+      vals$view_baza_solduri <- dplyr::bind_rows(vals_portof_upload$view_sold_uploadat %>% dplyr::select(-id_column), 
+                                    vals_portof_upload$view_solduri_prelucrate %>% dplyr::select(-id_column))
+                                                  
       
       saveRDS(object = vals$view_baza_solduri,file = "R/reactivedata/solduri/view_baza_sold.rds")
       
       saveRDS(object = vals_portof_upload$df_new_prel, file = "R/reactivedata/solduri/baza_banci.rds")
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
-                               .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
+          .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
       
       updateSelectInput(inputId = 'date_baza_solduri', session = session,
                         choices = vals$view_baza_solduri$data_raport %>% unique())

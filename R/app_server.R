@@ -114,31 +114,42 @@ app_server <- function( input, output, session ) {
     
     if ( sum("box_tabel2" == vals$box_selected) == 1 ) { 
      
-       mod_valute_server("valute_ui_1", vals)  }
+       mod_valute_server("valute_ui_1", vals)
+      vals$box_selected <- c(vals$box_selected, "box_tabel2") # make sure server function is only called once
+      }
     
     
     if ( sum("box_database_solduri" == vals$box_selected) == 1 )  { 
      
-       mod_garantii_database_server("garantii_database_ui_1", vals)   } 
+       mod_garantii_database_server("garantii_database_ui_1", vals)
+      vals$box_selected <- c(vals$box_selected, "box_database_solduri")
+      } 
     
     
     if ( sum("box_upload_solduri" == vals$box_selected) == 1 ) { 
       
-      mod_garantii_upload_server("garantii_upload_ui_1", vals)  } 
+      mod_garantii_upload_server("garantii_upload_ui_1", vals)  
+      vals$box_selected <- c(vals$box_selected, "box_upload_solduri") } 
     
     
     if ( sum("box_manual_solduri" == vals$box_selected) == 1 )  { 
       
-      mod_garantii_manual_server("garantii_manual_ui_1", vals)  } 
+      mod_garantii_manual_server("garantii_manual_ui_1", vals) 
+      vals$box_selected <- c(vals$box_selected, "box_manual_solduri")
+      } 
     
     # I do not know why below 2 boxes need to be selected twice
     if ( sum("box_database_plasamente" == vals$box_selected) == 2 ) { 
       
-      mod_balanta_database_server( "balanta_database_ui_1", vals_balanta ) } 
+      mod_balanta_database_server( "balanta_database_ui_1", vals_balanta )
+      vals$box_selected <- c(vals$box_selected, "box_database_plasamente")
+      } 
     
     if ( sum("box_upload_plasamente" == vals$box_selected) == 2 ) { 
       
-      mod_plasamente_upload_server("plasamente_upload_ui_1", vals, vals_balanta)  }
+      mod_plasamente_upload_server("plasamente_upload_ui_1", vals, vals_balanta) 
+      vals$box_selected <- c(vals$box_selected, "box_upload_plasamente")
+      }
       
   })
   

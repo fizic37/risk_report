@@ -51,7 +51,7 @@ mod_read_excel_server <- function(id, excel_reactive, red = "#dd4b39"){
       excel_first_read <- reactive({req(selected_sheet())
         readxl::read_excel(excel_reactive$file_input,sheet = selected_sheet(), range = "A1:AA50",.name_repair = "minimal")
         })
-      
+     
       
       # I get the row index where name if the columns are
       index_citire <- reactive({ req(excel_first_read())

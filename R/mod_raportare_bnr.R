@@ -158,6 +158,7 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
       h5("BI successfully uploaded", style="color:#00fbff;margin-top: 31px; margin-left: 30px;")
     } )
     
+    
     observe({ req(bi_reactiv$all_names==TRUE)
       bi_reactiv$fisier_prelucrat <- bi_reactiv$file_read_prel %>% dplyr::filter(`Nume Banca` != "Grand Total") %>% 
         dplyr::left_join(coresp_banci_bi, by = c("Nume Banca" = "Banca_BI")) %>% 
@@ -170,17 +171,30 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
         dplyr::group_by(Banca_Raport_BNR) %>% dplyr::summarise_all(.funs = ~sum(.)) %>% 
         dplyr::rename_at(.vars = 1,.funs = ~c("Finantator")) %>%
         dplyr::select(Finantator,dplyr::contains("CG"),dplyr::contains("PG")) %>% 
-        dplyr::arrange(desc(`Garantie RON_CG`)) %>%
-        janitor::adorn_totals(where = "row",na.rm = TRUE,name = "Total") 
+        dplyr::arrange(desc(`Garantie RON_CG`)) 
+     #   janitor::adorn_totals(where = "row",na.rm = TRUE,name = "Total") 
+      
       
       output$bi_prelucrat <- DT::renderDataTable({ req(bi_reactiv$fisier_prelucrat)
         
-        DT::datatable( data = bi_reactiv$fisier_prelucrat, rownames = FALSE,
+        bi_reactiv$exista_promisiuni <- ifelse(stringr::str_detect(bi_reactiv$file_read_prel$TipDocument,
+                                                pattern = "Promisiune") %>% any(), "DA","NU")
+        
+        switch(EXPR =  bi_reactiv$exista_promisiuni,
+        "DA" = DT::datatable( data = bi_reactiv$fisier_prelucrat, rownames = FALSE,
                        options = list(dom = "Bt",paging = FALSE, scrollY = "300px",
-                                      buttons=c("copy","excel") ), container = sketch_bi,extensions = "Buttons",
+                                      buttons=c("copy","excel")) ,
+                      container = sketch_bi, extensions = "Buttons",
                        caption =  htmltools::tags$caption(  style = 'caption-side: top; text-align: left;',
                                                             "Garantii acordate Prima Casa") )  %>%
-          DT::formatRound(columns = 2:7,digits = 0)  })
+          DT::formatRound(columns = 2:ncol(bi_reactiv$fisier_prelucrat),digits = 0),
+        "NU" = DT::datatable( data = bi_reactiv$fisier_prelucrat, rownames = FALSE,
+                              options = list(dom = "Bt",paging = FALSE,
+                                             buttons=c("copy","excel")) ,extensions = "Buttons",
+                              caption =  htmltools::tags$caption(  style = 'caption-side: top; text-align: left;',
+                                  "Garantii acordate Prima Casa. Nu exista Promisiuni de garantare") )  %>%
+          DT::formatRound(columns = 2:ncol(bi_reactiv$fisier_prelucrat),digits = 0) 
+        ) })
       
       file.copy( from = input$bi_pc_input$datapath, to = "R/reactivedata/pc/bi_acordari.xlsx",overwrite = TRUE)
       

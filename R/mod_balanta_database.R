@@ -8,6 +8,7 @@
 #'
 #' @importFrom shiny NS tagList 
 mod_balanta_database_ui <- function(id){
+  # Handles Database plasamente box from Plasamente tabpanel menu
   ns <- NS(id)
   
   fluidPage( br(),
@@ -43,17 +44,18 @@ mod_balanta_database_ui <- function(id){
 #' balanta_database Server Functions
 #'
 #' @noRd 
-mod_balanta_database_server <- function(id, vals_balanta){
+mod_balanta_database_server <- function(id, vals, vals_balanta){
+  # It is called in app_server.R with vals argument (to be used for vals$report_date for initialization of date_baza_balanta)
+  #   and vals_balanta which can update also inside mod_plasamente.R
+  
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
     tabela_banci <- readRDS("R/reactivedata/banci/tabela_nume_banci.rds")
     
-    observeEvent(vals_balanta,{
-     
-      shinyWidgets::updateAirDateInput( session = session,inputId = "date_baza_balanta",
-                    value = max( vals_balanta$balanta_database$data_balanta ) +1 )
-  }) 
+   
+    shinyWidgets::updateAirDateInput( session = session,inputId = "date_baza_balanta",
+                                           value = max( vals$report_date ) )
     
     observeEvent(input$date_baza_balanta, { req( input$date_baza_balanta != "1999-01-01" )
       

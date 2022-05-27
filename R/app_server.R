@@ -67,7 +67,7 @@ app_server <- function( input, output, session ) {
     }
     
     if ( sum("grupuri" == vals$final_report_check)==1 || sum("grupuri" == vals$raport_selected_tab)==1 ) {
-      mod_grupuri_database_server("grupuri_database_ui_1", vals)
+      mod_top_expuneri_grupuri_server("top_expuneri_grupuri_ui_1", vals)
       mod_grupuri_server("grupuri_ui_1", vals) 
       vals$raport_selected_tab <- c(vals$raport_selected_tab, 'grupuri')
       vals$final_report_check <- c(vals$final_report_check, "grupuri")
@@ -141,7 +141,7 @@ app_server <- function( input, output, session ) {
     # I do not know why below 2 boxes need to be selected twice
     if ( sum("box_database_plasamente" == vals$box_selected) == 2 ) { 
       
-      mod_balanta_database_server( "balanta_database_ui_1", vals_balanta )
+      mod_balanta_database_server( "balanta_database_ui_1", vals, vals_balanta )
       vals$box_selected <- c(vals$box_selected, "box_database_plasamente")
       } 
     

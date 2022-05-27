@@ -12,7 +12,7 @@ mod_plasamente_upload_ui <- function(id){
   
   
   fluidPage( shinyjs::useShinyjs(),
-             fluidRow( column(width = 4,
+             fluidRow( column(width = 3,
                               shinyFeedback::useShinyFeedback(),
                               fileInput(
                                 inputId = ns("balanta_upload"),
@@ -20,12 +20,14 @@ mod_plasamente_upload_ui <- function(id){
                                 placeholder = "No file uploaded",
                                 buttonLabel = "Excel only",
                                 label = "Upload balanta de verificare") ),
-                       column(width = 4, uiOutput(ns("show_balanta_date"))),
-                       column(width = 4, br(),uiOutput(ns("show_down") )),
+                       column(width = 2),
+                       column(width = 3, uiOutput(ns("show_balanta_date"))),
+                       column(width = 1),
+                       column(width = 3, br(),uiOutput(ns("show_down") )),
                        column(width = 12, DT::dataTableOutput(ns("verificare_conturi")), br() ), 
-                       column(width = 3, uiOutput(ns("show_save"))),
+                       column(width = 12, uiOutput(ns("show_save"))),
                        br(), hr(),
-                       uiOutput(ns("missing_banks"))
+                       column(width = 12,uiOutput(ns("missing_banks")))
              ))
   
 }
@@ -50,16 +52,17 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
     observeEvent(input$balanta_upload,{
       
       shiny::validate(shiny::need(tools::file_ext(input$balanta_upload$datapath) %in% c("xlsx","xls"),
-                                  message = paste0("XLSX only! You uploaded a ",tools::file_ext(input$balanta_upload$datapath)," file")))
+        message = paste0("XLSX only! You uploaded a ",tools::file_ext(input$balanta_upload$datapath)," file")))
       
       vals_balanta_upload$file_input = input$balanta_upload$datapath
       
       mod_read_excel_server("read_excel_ui_1",excel_reactive = vals_balanta_upload, red = "#dd4b39")  })
     
+    
     observeEvent(vals_balanta_upload$all_names,{ req(vals_balanta_upload$all_names == TRUE)
       
       output$show_balanta_date <- renderUI( shinyWidgets::airDatepickerInput(inputId = session$ns("balanta_date"),
-                                                                             label = "Selecteaza data balantei uploadate",value = vals$report_date, autoClose = TRUE) )
+                        label = "Selecteaza data balantei uploadate",value = vals$report_date, autoClose = TRUE) )
       
       
       # I deduct sold credit form sold debit and keep only the new processed sold debit
@@ -70,7 +73,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
       conturi_curente_banci <-  reactive({
         conturi_curente <- vals_balanta_upload$file_read_prel %>%
           dplyr::slice(stringr::str_which(string = `Simbol cont`,
-                                          pattern = rebus::`%R%`('^271', rebus::zero_or_more(rebus::DIGIT) )))
+                          pattern = rebus::`%R%`('^271', rebus::zero_or_more(rebus::DIGIT) )))
         
         
         conturi_curente <- conturi_curente %>% dplyr::left_join(coresp_banci_curente %>% dplyr::select(1, 3),
@@ -79,7 +82,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
         return( conturi_curente %>%      dplyr::slice(  which(
           purrr::map( conturi_curente$`Simbol cont`,
                       ~ sum(  stringr::str_detect(  string = conturi_curente$`Simbol cont`,
-                                                    pattern = rebus::`%R%`(.x, rebus::one_or_more(rebus::DIGIT))  ) ) == 0) %>% unlist() == TRUE)) %>%
+                  pattern = rebus::`%R%`(.x, rebus::one_or_more(rebus::DIGIT))  ) ) == 0) %>% unlist() == TRUE)) %>%
             dplyr::filter(`Solduri finale|Debit` != 0) %>%
             dplyr::mutate(tip_plasament = ifelse( stringr::str_detect(string = `Denumire cont`, pattern = 
                                                                         "gestionari|cautiune|mobiliara|CAUTIUNE|Cautiune"), "Gestionari_Cautiuni_Garantii", "Conturi_Curente" ),
@@ -101,9 +104,9 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
                                                   pattern = rebus::`%R%`(.x, rebus::one_or_more(rebus::DIGIT))) ) == 0 ) %>% unlist() == TRUE )) %>%
             dplyr::filter(`Solduri finale|Debit` != 0) %>%
             dplyr::mutate(tip_plasament = ifelse( stringr::str_detect(string = `Denumire cont`,
-                                                                      pattern = "mobiliara"),"Gestionari_Cautiuni_Garantii", "Depozite"),
+                              pattern = "mobiliara"),"Gestionari_Cautiuni_Garantii", "Depozite"),
                           tip_sursa = ifelse(stringr::str_detect(string = `Denumire cont`, 
-                                                                 pattern = "MADR|administrare|SAPARD"), "Surse_Administrare", "Surse_Proprii")  )
+                              pattern = "MADR|administrare|SAPARD"), "Surse_Administrare", "Surse_Proprii")  )
         )  })
       
       titluri <- reactive({
@@ -133,7 +136,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
       # I do not use it for the moment
       conturi_banci_sinteza <- reactive({ req( trezorerie_detaliat() )
         trezorerie_detaliat()  %>% tidyr::pivot_wider(names_from = c(tip_plasament, tip_sursa),
-                                                      names_sep = "_",values_from = "Solduri finale|Debit",values_fill = 0) %>% 
+          names_sep = "_",values_from = "Solduri finale|Debit",values_fill = 0) %>% 
           dplyr::select(-c(1:2)) %>% dplyr::group_by(Banca) %>% dplyr::summarise_all(.funs = ~sum(.)) %>%
           dplyr::mutate(Expunere_banca =rowSums(x = dplyr::select_if(.tbl = .,.predicate = is.numeric)))
       })
@@ -152,10 +155,11 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
       })
       
       output$show_down <- renderUI( { req(conturi_curente_banci(), conturi_depozite_banci())
-        downloadLink(session$ns("down_conturi"),label = "Downloadeaza balanta prelucrata", class = "pull-right")  })
+        shinyWidgets::downloadBttn(ns("down_conturi"),label = "Balanta prelucrata",
+                          color = "primary",style = "stretch",size = "md")   })
       
       output$down_conturi <- downloadHandler(filename = function() { paste0("balanta_",input$balanta_date,".csv") },
-                                             content = function(file) { readr::write_csv(x = vals_balanta_upload$df_new, file=file) }    )
+              content = function(file) { readr::write_csv(x = vals_balanta_upload$df_new, file=file) }    )
       
       output$verificare_conturi <-      DT::renderDataTable( { req(trezorerie_detaliat)
         DT::datatable(options = list(dom = "t"), data = 
@@ -168,7 +172,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
                                      vals_balanta_upload$file_read_prel %>%
                                        dplyr::filter(`Simbol cont` == "272") %>% dplyr::pull(`Solduri finale|Debit`),
                                      vals_balanta_upload$file_read_prel %>% dplyr::slice(stringr::str_which(string = `Simbol cont`,
-                                                                                                            rebus::`%R%`('^272',rebus::zero_or_more(rebus::DIGIT)))) %>%
+                                          rebus::`%R%`('^272',rebus::zero_or_more(rebus::DIGIT)))) %>%
                                        dplyr::slice( stringr::str_which(string = `Denumire cont`,
                                                                         pattern = "gestionari|cautiune|mobiliara|CAUTIUNE|Cautiune") ) %>%
                                        dplyr::pull(`Solduri finale|Debit`) %>% sum(.)),
@@ -206,7 +210,7 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
     #Below observer shows missing banks UI for the case when there are new accounting accounts not assigned
     # to banks within coresp_banci_curente or coresp_banci_depozite
     observeEvent(vals_balanta_upload$df_new,{
-      
+     
       output$show_save <- renderUI({ req(vals_balanta_upload$check_banks == FALSE)
         actionLink(inputId = session$ns("save_balanta"),label = "Salveaza balanta prelucrata",icon = icon("save")) })
       
@@ -225,11 +229,11 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
           )
         })
         output$fill_banks <- rhandsontable::renderRHandsontable({
+         
           rhandsontable::rhandsontable(data=vals_balanta_upload$df_new %>% dplyr::filter(is.na(Banca)) %>% 
-                                         dplyr::select(1:2,4), rowHeaders = NULL,readOnly = F,colHeaders = 
-                                         c("Simbol Cont", "Denumire Cont", "Selecteaza Finantatorul"),
-                                       width = 600, height = 250) %>% 
-            rhandsontable::hot_col(col = 3,type = "dropdown",
+            dplyr::select(1:2,4), rowHeaders = NULL,readOnly = F,colHeaders = 
+             c("Simbol Cont", "Denumire Cont", "Selecteaza Finantatorul"),overflow = "visible") %>%   
+            rhandsontable::hot_col(col = 3,type = "dropdown",width = "250px",
                                    source = unique(c(coresp_banci_depozite$Banca,coresp_banci_curente$Banca))) %>%
             rhandsontable::hot_col(col = 1:2,readOnly = TRUE) })
         

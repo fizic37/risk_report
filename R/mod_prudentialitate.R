@@ -136,7 +136,7 @@ mod_prudentialitate_server <- function(id, vals){
       
       # Below I calculate and expose tabel1
       observe( {req(vals$report_date,vals$previous_month, vals$previous_year)
-        
+       
         # I calculate totals for Tip fonduri of tabel1
         vals_prudent$tabel1 <- vals$view_baza_solduri %>% dplyr::filter(data_raport == vals$report_date) %>%
           dplyr::group_by(Tip_surse, `Tip fonduri`) %>% dplyr::summarise(

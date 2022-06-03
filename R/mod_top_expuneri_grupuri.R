@@ -41,8 +41,9 @@ mod_top_expuneri_grupuri_server <- function(id, vals){
     
     baza_grupuri <- readRDS("R/reactivedata/grupuri/baza_grupuri.rds")
     
-    # Process Database grupuri
-    grupuri <- baza_grupuri %>% dplyr::group_by(data_grupuri) %>%
+    # Process Database grupuri. I use observeevent in order to pass vals$grupuri to mod_final_report
+    observeEvent(vals,{
+    vals$grupuri <- baza_grupuri %>% dplyr::group_by(data_grupuri) %>%
       dplyr::summarise(Nr_grupuri = dplyr::n_distinct(GrupId),
                        Expunere_garantare_totala = sum(Expunere_garantare, na.rm = TRUE)  ) %>%
       dplyr::left_join(
@@ -55,12 +56,16 @@ mod_top_expuneri_grupuri_server <- function(id, vals){
           dplyr::summarise(Nr_grupuri_expunere_garantare =  dplyr::n_distinct(GrupId)), by = "data_grupuri") %>%
       dplyr::arrange(desc(data_grupuri))
     
+    })
+    
     updateSelectInput("date_expuneri",session = session,choices = sort(unique(baza_grupuri$data_grupuri), 
                                                                        decreasing = TRUE))
     
     
+    
+    
     output$grupuri_database <- DT::renderDataTable(
-      DT::datatable(  data =  grupuri,   rownames = FALSE, extensions = "Buttons",
+      DT::datatable(  data =  vals$grupuri,   rownames = FALSE, extensions = "Buttons",
                       options = list(dom = "Bt", pageLength = 5),
                       caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
                                                         "Baza date Grupuri:")) %>% DT::formatRound(columns = 2:5, digits = 0)   )

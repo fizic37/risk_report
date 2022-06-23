@@ -8,6 +8,7 @@
 #'
 #' @importFrom shiny NS tagList 
 mod_plati_ui <- function(id){
+  # Handles UI and server of Plati si cerrei plata tabpanel
   ns <- NS(id)
   tagList(
     shinybusy::add_busy_spinner(  color = "#ff007b",    position = "bottom-right",    timeout = 200),
@@ -348,7 +349,7 @@ mod_plati_server <- function(id, vals){
       saveRDS( vals_plati$snapshots, "R/reactivedata/plati/bi_snapshots.rds")
       saveRDS( vals_plati$plati_database, "R/reactivedata/plati/plati_database.rds")
       
-      file.copy(from = input$bi_upload$datapath,to = "R/reactivedata/plati/BI_plati.xlsx",overwrite = )
+      file.copy(from = input$bi_upload$datapath,to = "R/reactivedata/plati/BI_plati.xlsx",overwrite = TRUE)
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
             .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))

@@ -25,13 +25,12 @@ mod_grupuri_ui <- function(id){
                      
                      column(width = 3, uiOutput(ns("show_grup_date"))),
                    
-                     column(width = 12, DT::dataTableOutput(ns('grupuri_detaliate')), br()),
+                     column(width = 12, DT::dataTableOutput(ns('grupuri_detaliate')) ),
                      
+                     column(width = 12, uiOutput(ns("show_down_grupuri")), br() ),
                     
+                     column(width = 12, DT::dataTableOutput(ns( "grupuri_selectate")))
                     
-                     column(width = 9, DT::dataTableOutput(ns( "grupuri_selectate"))),
-                     
-                     column(width = 3, uiOutput(ns("show_down_grupuri")))
                    
                                     )  )  ),
   
@@ -98,7 +97,7 @@ mod_grupuri_server <- function(id, vals){
         # I process tipologie conventie, for every contract that contains OUG sau AGRO it will be garantie_stat
         grupuri_reactive$filtered_data <- grupuri_reactive$filtered_data %>%
           dplyr::mutate(tipologie_conventie = ifelse( is.na(tipologie_conventie) & 
-              stringr::str_detect(string = grupuri_reactive$filtered_data$Nrcontract, pattern = "OUG|AGRO"),
+              stringr::str_detect(string = grupuri_reactive$filtered_data$Nrcontract, pattern = "OUG|AGRO|PROD|GCU"),
                     "garantii_stat", tipologie_conventie))
         
         
@@ -118,19 +117,20 @@ mod_grupuri_server <- function(id, vals){
         output$show_toggle_missing <- renderUI({ 
           switch( grupuri_reactive$need_more_data,
                  'TRUE' = tagList( br(),
+                div(style="margin-left:70px; padding-top: 8px;",
                 shinyWidgets::actionBttn(ns("show_missing"),icon =icon("circle-plus"), style="stretch",color="danger",
-                                   label = "STOP, am nevoie de informatii actualizate. Click aici!") ),
-                'FALSE' = tagList( br(), div(style="margin-left:125px; padding-top: 8px;",
+                                   label = "STOP, am nevoie de informatii actualizate. Click aici!") ) ),
+                'FALSE' = div( style="margin-left:120px; padding-top: 28px;",
                                    shinyWidgets::actionBttn(ns("save_grupuri"),label = "Salveaza grupurile uploadate",
-                              color = "success",style = "stretch",size = "md",icon = icon("save")) ) )
+                              color = "success",style = "stretch",size = "md",icon = icon("save")) ) 
                         
                 )
           
         })
         
         output$show_down_grupuri <- renderUI( { req( grupuri_reactive$need_more_data == 'FALSE')
-          tagList(br(),br(), br(), br(), br(), shinyWidgets::downloadBttn(ns("down_grupuri_selectate"),
-                label = "Download grupurile detaliate de mai sus",style = "stretch",color = "primary",size = "sm") )
+          shinyWidgets::downloadBttn(ns("down_grupuri_selectate"),
+                label = "Download grupurile detaliate de mai sus",style = "stretch",color = "primary",size = "sm")
         })
         
         # I get unique combination of unic_tipologie_conventie for every distinct group in order to filter out later
@@ -161,7 +161,7 @@ mod_grupuri_server <- function(id, vals){
                  'TRUE' =  DT::datatable(data =  grupuri_reactive$filtered_data %>% dplyr::filter(is.na(tipologie_conventie) & 
                               Nrcontract!="-") %>% dplyr::mutate(dplyr::across(.cols = 3:4, ~as.factor(.x))), 
                               options = list(pageLength = 4, dom = "Ftp", scrollY=TRUE),filter = "top",
-                              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+                              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left; color: #ff007b;',
                                "Nu se constituie grupurile de mai jos din cauza lipsei conventiei. Click pe 
                                 butonul Stop de mai sus pentru a actualiza BI-ul."), rownames = F),
                  'FALSE' = DT::datatable(data = grupuri_reactive$grupuri_selectate %>% 
@@ -179,14 +179,14 @@ mod_grupuri_server <- function(id, vals){
         })
         
         
-        output$grupuri_detaliate <- DT::renderDataTable({ 
+        output$grupuri_detaliate <- DT::renderDataTable({ req( grupuri_reactive$need_more_data == FALSE )
           
             DT::datatable(
               data = grupuri_reactive$grupuri_selectate %>% 
                 dplyr::mutate_at(.vars = "tipologie_conventie", as.factor) %>%
                 dplyr::select(nume_obligatorii_grupuri,
                               data_constituire_grup, tipologie_conventie),  rownames = FALSE,
-              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left; color: #28b78d;',
                         paste0( "Lista detaliata a grupurilor valabila la data de ",
                                 as.character(input$data_grupuri)) ),
               filter = list(position = "top", clear = TRUE, plain = TRUE),
@@ -207,7 +207,8 @@ mod_grupuri_server <- function(id, vals){
       
       # Observer to show modal when data is missing
       observeEvent( input$show_missing,{
-        showModal( modalDialog(title = "Actualizeaza BI-ul", size = "l", footer = modalButton("Cancel"),
+        showModal( modalDialog(title = "Actualizeaza BI-ul", size = "l", footer = modalButton("Close",
+                                      icon = icon("square-xmark")),
                    fluidRow( column(width = 6,
                                     fileInput(inputId = ns("input_bi_grupuri"),label = "Upload BI",accept = ".xlsx",
                                     buttonLabel = "Excel only",placeholder = "No file uploaded"),

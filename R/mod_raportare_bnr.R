@@ -260,37 +260,43 @@ mod_raportare_bnr_server <- function(input, output, session, vals){
   } )
   
   observeEvent(input$confirm_save,{ req(input$confirm_save == TRUE)
+    sold_reactiv$df_old <- vals$view_baza_solduri %>% dplyr::mutate(id_check = paste0(`Tip fonduri`,data_raport))
     
-    sold_reactiv$new_pc_sold <- data.frame( Tip_surse = "Nume_cont_stat", "Tip fonduri" = "Prima Casa",check.names = FALSE,
-                                            Nr_contracte = sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_CG`) + 
-                                              sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_PG`),
-                                            Sold_garantii = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_CG`) + 
-                                              sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_PG`), 
-                                            data_raport = sold_reactiv$pc_date,
-                                            Sold_credite_garantate = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_CG`) + 
-                                              sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_PG`)) %>% 
+    sold_reactiv$df_new <-  data.frame(     Tip_surse = "Nume_cont_stat",
+        "Tip fonduri" = "Prima Casa",   check.names = FALSE,
+        Nr_contracte = sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_CG`) +
+          sum(sold_reactiv$fisier_prelucrat$`Count of Cod Partener_PG`),
+        Sold_garantii = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_CG`) +
+          sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Garantie (Lei)_PG`),
+        data_raport = sold_reactiv$pc_date,
+        Sold_credite_garantate = sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_CG`) +
+          sum(sold_reactiv$fisier_prelucrat$`Sum of Sold Credit (Lei)_PG`) ) %>%
       dplyr::mutate(Nr_beneficiari = Nr_contracte) %>%
-      dplyr::mutate( dplyr::across(.cols = dplyr::contains("Sold"), ~as.numeric(.x))) %>% 
-      dplyr::mutate( dplyr::across(.cols = dplyr::contains("Nr_"), ~as.integer(.x)))
+      dplyr::mutate(dplyr::across(.cols = dplyr::contains("Sold"), ~ as.numeric(.x))) %>%
+      dplyr::mutate(dplyr::across(.cols = dplyr::contains("Nr_"), ~ as.integer(.x)))  %>%
+      dplyr::mutate(id_check = paste0(`Tip fonduri`,data_raport))
     
-    sold_reactiv$ok_save <- janitor::compare_df_cols_same( sold_reactiv$new_pc_sold ,vals$view_baza_solduri)
+    sold_reactiv$element_id <- paste0( "Prima Casa",sold_reactiv$pc_date )
+    sold_reactiv$column_id = "id_check"
+    sold_reactiv$finalise_process_compare_df = FALSE
     
-    if ( sold_reactiv$ok_save ) {
-      
-      vals$view_baza_solduri <- dplyr::bind_rows( sold_reactiv$new_pc_sold, vals$view_baza_solduri %>% 
-                                                    dplyr::mutate(temp_column = ifelse(`Tip fonduri` == "Prima Casa" & 
-                                                                                         data_raport == input$pc_date,1,0)) %>% dplyr::filter(temp_column==0) %>% 
-                                                    dplyr::select(-temp_column))
-      
-      saveRDS(object = vals$view_baza_solduri, file = "R/reactivedata/solduri/view_baza_sold.rds")
-      
-      shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
-                               .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE)) 
-      
-      sold_reactiv$ok_save <- FALSE
-    }
-    else { shinyFeedback::showToast(type = "error",title = "ERROR",message = "Failed to save", keepVisible = F) }
-  } )  
+    callModule(mod_compare_df_server, "compare_df_ui_1", df_reactive = sold_reactiv, red="#ff007b",green="#00ff84")
+    })
+  
+  
+  observeEvent(sold_reactiv$finalise_process_compare_df,{ req(sold_reactiv$finalise_process_compare_df == TRUE )
+    
+    saveRDS(object = sold_reactiv$df_new_prel %>% dplyr::select(-id_check),file = "R/reactivedata/solduri/view_baza_sold.rds")
+    
+    
+    shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
+                             .options = list("timeOut"=1500, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
+    
+    sold_reactiv$finalise_process_compare_df <- FALSE
+    
+    vals$view_baza_solduri <- sold_reactiv$df_new_prel %>% dplyr::select(-id_check)
+    
+  })
   
   
     

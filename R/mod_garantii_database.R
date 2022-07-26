@@ -19,8 +19,8 @@ mod_garantii_database_ui <- function(id){
             
           
     column(width = 3),
-    column( width = 6,  br(),    downloadLink(outputId = ns("down_solduri"),
-                   label = "Download tabelul de mai jos in format detaliat")),
+    column( width = 6,  br(),    shinyWidgets::downloadBttn(outputId = ns("down_solduri"),
+                   label = "Download tabelul de mai jos in format detaliat",style = "stretch",color = "primary")),
     
     DT::dataTableOutput(ns("baza_date_solduri"))
   )
@@ -41,7 +41,7 @@ mod_garantii_database_server <- function(id, vals){
     observeEvent( vals$view_baza_solduri,{
       
       shinyWidgets::updateAirDateInput(inputId = 'date_baza_solduri',  session = session,
-              value = max(vals$view_baza_solduri$data_raport, na.rm = T) +1 )
+              value = max(vals$view_baza_solduri$data_raport, na.rm = T) )
      
       output$baza_date_solduri <- DT::renderDataTable(
         DT::datatable(data = vals$view_baza_solduri %>%

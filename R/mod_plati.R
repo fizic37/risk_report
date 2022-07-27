@@ -106,7 +106,7 @@ mod_plati_server <- function(id, vals){
     
     plati_database <- readRDS("R/reactivedata/plati/plati_database.rds")
     
-    cereri_plata_database <- readRDS("R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
+    cereri_plata_database <- readRDS("R/external_volumes/cereri_plata/cereri_plata.rds")
     
     
     vals_plati <- reactiveValues(snapshots = bi_snapshots, cereri_plata_database = cereri_plata_database)
@@ -150,7 +150,7 @@ mod_plati_server <- function(id, vals){
         max(vals_plati$cereri_plata_read$Data_cerere_plata, na.rm=T) >= 
         max(cereri_plata_database$Data_cerere_plata,na.rm=T) ) {
         
-       saveRDS(object = vals_plati$cereri_plata_read, file = "R/reactivedata/plati/external_volume_cereri_plata/cereri_plata.rds")
+       saveRDS(object = vals_plati$cereri_plata_read, file = "R/external_volumes/cereri_plata/cereri_plata.rds")
         
         if ( tools::file_ext(input$cereri_plata_upload$datapath ) == "xlsx" ) { 
           file.copy(from = input$cereri_plata_upload$datapath,to = "R/reactivedata/plati/cereri_plata.xlsx", overwrite = T) }

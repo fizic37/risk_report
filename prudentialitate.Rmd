@@ -59,7 +59,7 @@ Prezentul raport a fost întocmit pentru conformarea cu prevederile punctului 9.
 flextable::flextable(data = params$tabel1 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Variat"),
     ~ .x * 100)) %>% dplyr::rename_with(.data = .,.cols = dplyr::everything(),.fn = ~ stringr::str_replace_all( pattern = "_", string = .x, replacement = " "))) %>% 
 flextable::colformat_double(j = 4:7, suffix = "%") %>% flextable::colformat_double(j = 2:3,digits = 0) %>%
-flextable::theme_vanilla() %>%  
+flextable::theme_vanilla() %>%
 flextable::width(j = 1,width = 1.2,unit = "in") %>%
 flextable::width(j = 2,width = 1.13,unit = "in") %>%
 flextable::width(j = 3:7,width = 0.75,unit = "in") %>% flextable::width(j = 3,width = 1,unit = "in") %>% flextable::fontsize(j = 3:7,size = 9,part = "header")
@@ -118,7 +118,7 @@ La data de `r params$luna_curenta` expunerile din activitatea de garantare pe se
 
 <br>  
 
-*Tabelul 4 – Sinteză solduri de garanţii şi surse de finanţare – August 2021*   
+*Tabelul 4 – Sinteză solduri de garanţii şi surse de finanţare*   
 
 
 ```{r}

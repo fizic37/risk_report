@@ -20,7 +20,7 @@ mod_compare_df_server <- function(input, output, session,df_reactive, green = "#
   # It needs inside df_reactive a df_old which is the old database, a element_id which is the date by which it
   # searches if df_old already contains that date, and a column_id which is the column of df_old where it searches for element_id
   
-  observeEvent(df_reactive$element_id,{
+  observeEvent( df_reactive$element_id,{ req( !is.null(df_reactive$element_id ))
     
    df_reactive$needs_overwrite <- as.character(df_reactive$element_id %in% 
                                     unique(dplyr::pull(.data = df_reactive$df_old,df_reactive$column_id)))

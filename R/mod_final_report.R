@@ -93,11 +93,11 @@ mod_final_report_server <- function(id,vals){
     if (all(!is.null(vals$anexa_A),!is.null(vals$anexaC_final))) (shinyWidgets::updateAwesomeRadio(session = session,
                                       inputId = "tabelanexe", selected = "Checked",status = "successs"))  
     
-    if ( all(!is.null(vals$tabel4),!is.null(vals$grupuri),!is.null(vals$provizioane_plati),!is.null(vals$tabel9),
+    if ( all( !is.null(vals$tabel4), !is.null(vals$grupuri), !is.null(vals$provizioane_plati),!is.null(vals$tabel9),
             !is.null(vals$tabel10),!is.null(vals$tabel11) , !is.null(vals$anexa_A),
              !is.null(vals$anexaC_final) ) ) shinyjs::enable(id = "action_report")
-   
-    })
+    
+     })
    
    #observeEvent(vals,{browser()})
       

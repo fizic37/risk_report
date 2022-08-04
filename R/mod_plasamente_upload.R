@@ -20,7 +20,7 @@ mod_plasamente_upload_ui <- function(id){
                                 placeholder = "No file uploaded",
                                 buttonLabel = "Excel only",
                                 label = "Upload balanta de verificare") ),
-                       column(width = 2),
+                       column(width = 2, textOutput(ns("error_message"))),
                        column(width = 3, uiOutput(ns("show_balanta_date"))),
                        column(width = 1),
                        column(width = 3, br(),uiOutput(ns("show_down") )),
@@ -58,6 +58,10 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
       
       mod_read_excel_server("read_excel_ui_1",excel_reactive = vals_balanta_upload, red = "#dd4b39")  })
     
+    output$error_message <- renderText({ req(vals_balanta_upload$all_names == FALSE )
+      paste0(paste0("STOP, nu am gasit coloanele: ", paste(vals_balanta_upload$missing_names,collapse = "; ") %>% 
+                      stringr::str_c()), ". Asigura-te ca ai uploadat balanta de verificare la inceput de an 
+             care inlcude NC de ajustare si Totaluri pe ultimul nivel afisat!")  })
     
     observeEvent(vals_balanta_upload$all_names,{ req(vals_balanta_upload$all_names == TRUE)
       

@@ -22,7 +22,8 @@ mod_plasamente_ui <- function(id){
     bs4Dash::box(title = "Upload plasamente", collapsible = T,collapsed = T,maximizable = T,width = 12,
                  icon = icon("file-import"),id = ns("box_upload_plasamente"),
                  footer = "Se uploadeaza balanta de verificare care contine clasele de conturi 271 si 272. 
-               Balanta se obtine din Charisma-Contabilitate-Rapoarte-Balanta de verificare-Balanta de verificare.",
+               Balanta se obtine din Charisma-Contabilitate-Rapoarte-Balanta de verificare-Balanta de verificare-
+                 Balanta de verificare la inceput de an - Include NC de ajustare - Totaluri pe ultimul nivel afisat.",
             
                      mod_plasamente_upload_ui("plasamente_upload_ui_1")),
   

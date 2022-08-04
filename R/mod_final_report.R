@@ -127,10 +127,10 @@ mod_final_report_server <- function(id,vals){
               file.copy(from = "prudentialitate.Rmd",
                         to =  tempReport,
                         overwrite = TRUE)
-              file.copy(from = "template_prudentialitate.docx",
+              file.copy(from = "R/reactivedata/template_prudentialitate.docx",
                         to =  templateReport,
                         overwrite = TRUE)
-              
+             
               fonduri_proprii = readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
                 dplyr::filter(data_raport == vals$report_date) %>% dplyr::pull(Fonduri_proprii) %>% max(.,1)
               

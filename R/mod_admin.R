@@ -9,18 +9,37 @@
 #' @importFrom shiny NS tagList 
 mod_admin_ui <- function(id){
   ns <- NS(id)
-  bs4Dash::tabsetPanel(id = ns("admin"),  selected = T,  
+  bs4Dash::tabsetPanel(id = ns("admin"),  selected = T,
+  
+  shiny::tabPanel(title = "Uploads - diverse",value = "uploads",icon = icon("file-upload"),
+                  
+                  bs4Dash::box( title="Upload modelul de raport final",
+                                status = "info",width = 12, collapsible = T, collapsed = T,
+                                maximizable = TRUE, icon = icon("file-arrow-up"),
+                                footer = "Atentie, nu voi prelucra upload-ul tau. 
+                  Doar il voi salva si voi incerca sa scriu in el info updatate.",
+                                
+                      fluidRow(column(width = 3, fileInput(inputId = ns("upload_doc"),
+                                     label = "Uploadeaza modelul de raport final",accept = c(".docx"),
+                                   placeholder = "nothing uploaded",buttonLabel = "docx only")),
+                                         
+                               column(width = 8, div(style = "padding-top: 24px; padding-left: 190px;",
+                                     shinyWidgets::downloadBttn(outputId = ns("down_doc"),
+                                    label = "Downloadeaza modelul existent de raport",
+                                      style = "stretch",color = "primary")))) )
+  ),
+                       
   shiny::tabPanel(title = "Banci",value = "banci", icon = icon("university"), 
                   shinyFeedback::useShinyFeedback(),
      fluidPage(
             br(),
             fluidRow(
-            bs4Dash::box( title = "Lista banci fuziuni",status = "primary",collapsible = T,collapsed = F,maximizable = T,
+            bs4Dash::box( title = "Lista banci fuziuni",status = "primary",collapsible = T,collapsed = T,maximizable = T,
                          footer = "Click pe o banca din tabel si editeaza data si noul finantator cu care a fuzionat",
                          width = 8, icon = icon("object-ungroup"),
                          DT::dataTableOutput(ns("lista_banci")) ),
             
-            bs4Dash::box(title = "Update banci din BI",status = "primary",collapsible = T,collapsed = F,maximizable = T,
+            bs4Dash::box(title = "Update banci din BI",status = "primary",collapsible = T,collapsed = T,maximizable = T,
                          width = 4, icon = icon("file-excel"),
                          footer = "Se downloadeaza modelul de BI folosind link-ul Model BI, se modifica data snapshot, se 
                          salveaza local fisierul si se uploadeaza. Ulterior voi verifica daca sunt banci noi si te voi intreba 
@@ -35,7 +54,7 @@ mod_admin_ui <- function(id){
                     
                   )  ) ),
             
-            bs4Dash::box( title = "Conturi contabile - corespondenta banci",status = "primary",collapsible = T,collapsed = T,
+            bs4Dash::box( title = "Conturi contabile - corespondenta banci",status = "primary",collapsible = T,collapsed = F,
                           maximizable = T,  width = 12, icon = icon("hand-point-right"),
                           fluidRow(column(width = 6,
                           DT::dataTableOutput(ns("conturi_curente"))),
@@ -68,11 +87,26 @@ mod_admin_server <- function(id, vals){
     
    
     output$conturi_curente <- DT::renderDataTable(
-     DT::datatable(data = vals_admin$conturi_curente, rownames = FALSE, caption = "Conturi curente:",
-                   options = list(dom = "tp")) )
+     DT::datatable(data= vals_admin$conturi_curente %>% dplyr::mutate(dplyr::across(.cols = dplyr::everything(), ~as.factor(.x))),
+                   rownames = FALSE, extensions = "Buttons", 
+                   caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+                        "Lista conturilor curente"), 
+                   options = list(paging = FALSE, scrollY = "300px",dom = "Btfip", buttons= c("copy","excel"))))
     
-    output$conturi_depozite <- DT::renderDataTable( DT::datatable(data = vals_admin$conturi_depozite,rownames = FALSE,
-              caption = "Conturi depozite", options = list(dom = "tp")))
+    observeEvent( input$upload_doc,{ shiny::validate( shiny::need(expr = 
+      tools::file_ext(input$upload_doc$datapath) == "docx", message = "Docx only" ) )
+      file.copy(from = input$upload_doc$datapath, to = "template_prudentialitate.docx",overwrite = TRUE)
+      shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Am salvat cu succes modelul de raport final",
+      .options = list("timeOut"=1000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE) )
+    })
+    
+    output$down_doc <- downloadHandler( filename = function() {"template_prudentialitate.docx"},
+          content = function(file) {file.copy(from = "template_prudentialitate.docx", to = file, overwrite = TRUE ) } )
+    
+    output$conturi_depozite <- DT::renderDataTable( DT::datatable(data = vals_admin$conturi_depozite, rownames = FALSE,
+              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
+                                                "Lista conturilor aferente depozitelor bancare"),  
+            options = list(paging = FALSE, scrollY = "300px",dom = "Btfip", buttons= c("copy","excel"))))
     
     observeEvent(input$admin,{ vals$admin_selected_tab <- input$admin  } )
     

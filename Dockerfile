@@ -17,7 +17,7 @@ RUN Rscript -e 'remotes::install_version("config",upgrade="never", version = "0.
 RUN Rscript -e 'remotes::install_version("rhandsontable",upgrade="never", version = "0.3.8")'
 RUN Rscript -e 'remotes::install_version("gfonts",upgrade="never", version = "0.1.3")'
 RUN Rscript -e 'remotes::install_version("rebus",upgrade="never", version = "0.1-3")'
-RUN Rscript -e 'remotes::install_version("shinyjs",upgrade="never", version = "2.0.0")'
+RUN Rscript -e 'remotes::install_version("shinyjs",upgrade="never", version = "2.1.0")'
 RUN Rscript -e 'remotes::install_version("shinybusy",upgrade="never", version = "0.2.2")'
 RUN Rscript -e 'remotes::install_version("shinyFeedback",upgrade="never", version = "0.4.0")'
 RUN Rscript -e 'remotes::install_version("shinyWidgets",upgrade="never", version = "0.6.2")'

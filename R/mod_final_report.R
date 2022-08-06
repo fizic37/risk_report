@@ -134,7 +134,7 @@ mod_final_report_server <- function(id,vals){
               fonduri_proprii = readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
                 dplyr::filter(data_raport == vals$report_date) %>% dplyr::pull(Fonduri_proprii) %>% max(.,1)
               
-              tabel7 <- readRDS("R/reactivedata/tabel7.rds") %>% 
+              tabel7 <- readRDS("R/reactivedata/finantari/tabel7.rds") %>% 
                 dplyr::mutate(`% din fonduri proprii*` = `Expunere neta, lei`*100/fonduri_proprii)
               
               params = list(luna_curenta = vals$report_date, tabel1 = vals$tabel1, tabel2 = vals$tabel2, 

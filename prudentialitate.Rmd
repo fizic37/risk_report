@@ -25,7 +25,7 @@ params:
 
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = FALSE,size = "large")
+knitr::opts_chunk$set(echo = FALSE,size = "large", error = TRUE, cache = FALSE)
 flextable::set_flextable_defaults(digits = 0, big.mark = ",",font.family = "times")
 library(magrittr)
 ```
@@ -165,8 +165,8 @@ Se respectă prevederea politicii de risc privind expunerea maximă a Fondului f
 
 *Tabelul 7 – Expunerea faţă de persoanele aflate în relaţii speciale cu Fondul*   
 
-```{r, cache.extra = tools::md5sum('finantari/tabel7.rds'), error=TRUE}
-
+```{r, cache.extra = tools::md5sum('R/reactivedata/finantari/tabel7.rds')}
+  
   flextable::flextable(data = params$tabel7) %>%  flextable::colformat_double(j = 8, suffix = "%",digits = 2) %>% 
   flextable::add_header_row(top = T,values = c("Grup","Membrii grupului",""),
                             colwidths = c(2,2,4)) %>% 

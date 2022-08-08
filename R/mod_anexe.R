@@ -176,6 +176,7 @@ mod_anexe_server <- function(id, vals){
    
     
    output$anexaB <- DT::renderDataTable({ req(vals$anexaC_final)
+    
       DT::datatable(data = vals$anexaC_final, rownames = F, extensions = "Buttons",
                     options = list(dom = "Bfti", paging = FALSE, scrollY = "300px", buttons = c("copy","excel","csv")), 
                 caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',

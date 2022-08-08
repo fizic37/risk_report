@@ -126,7 +126,7 @@ mod_final_report_server <- function(id,vals){
               tempReport <-   file.path(temporary_directory, "prudentialitate.Rmd")
               templateReport <-    file.path(temporary_directory, "template_prudentialitate.docx")
               
-              file.copy(from = "R/reactivedata/prudentialitate.Rmd",
+              file.copy(from = "prudentialitate.Rmd",
                         to =  tempReport,
                         overwrite = TRUE)
               file.copy(from = "R/reactivedata/template_prudentialitate.docx",

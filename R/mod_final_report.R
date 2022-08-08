@@ -115,16 +115,10 @@ mod_final_report_server <- function(id,vals){
       
       observeEvent(input$cancel_download,{ removeModal(session = session) } )
       
-      fonduri_proprii = readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
-        dplyr::filter(data_raport == vals$report_date) %>% dplyr::pull(Fonduri_proprii) %>% max(.,1)
       
-      tabel7 <- readRDS("R/reactivedata/finantari/tabel7.rds") %>% 
-        dplyr::mutate(`% din fonduri proprii*` = `Expunere neta, lei`*100/fonduri_proprii)
     
     output$generate_report <-   downloadHandler( filename = function() { "prudentialitate.docx" },
             content = function(file) {
-              
-              req(fonduri_proprii, tabel7)
               
               removeModal(session = session)
               
@@ -138,7 +132,12 @@ mod_final_report_server <- function(id,vals){
               file.copy(from = "R/reactivedata/template_prudentialitate.docx",
                         to =  templateReport,
                         overwrite = TRUE)
-             
+              
+              fonduri_proprii = readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
+                dplyr::filter(data_raport == vals$report_date) %>% dplyr::pull(Fonduri_proprii) %>% max(.,1)
+              
+              tabel7 <- readRDS("R/reactivedata/finantari/tabel7.rds") %>%
+              dplyr::mutate(`% din fonduri proprii*` = `Expunere neta, lei`*100/fonduri_proprii)
              
               params = list(luna_curenta = vals$report_date, tabel1 = vals$tabel1, tabel2 = vals$tabel2, 
                             tabel3 = vals$tabel3, tabel4 = vals$tabel4, grupuri_expunere = 
@@ -149,7 +148,8 @@ mod_final_report_server <- function(id,vals){
                             expunere_grupuri = vals$grupuri %>% dplyr::filter(data_grupuri==vals$report_date) %>% 
                               dplyr::pull(Expunere_garantare_totala),
                             tabel5 =  vals$top_expuneri_fonduri_proprii, tabel6 = vals$top_expuneri_surse_proprii,
-                            tabel7 = tabel7, tabel8 = vals$provizioane_plati, tabel9 = vals$tabel9, tabel10=vals$tabel10,
+                            tabel7 = tabel7, 
+                            tabel8 = vals$provizioane_plati, tabel9 = vals$tabel9, tabel10=vals$tabel10,
                             tabel11 = vals$tabel11, anexaA = vals$anexa_A,anexaB = vals$anexaC_final)
              
               rmarkdown::render(input = tempReport,

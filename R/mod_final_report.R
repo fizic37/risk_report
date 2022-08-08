@@ -115,7 +115,7 @@ mod_final_report_server <- function(id,vals){
       
       observeEvent(input$cancel_download,{ removeModal(session = session) } )
       
-      
+     
     
     output$generate_report <-   downloadHandler( filename = function() { "prudentialitate.docx" },
             content = function(file) {
@@ -126,14 +126,14 @@ mod_final_report_server <- function(id,vals){
               tempReport <-   file.path(temporary_directory, "prudentialitate.Rmd")
               templateReport <-    file.path(temporary_directory, "template_prudentialitate.docx")
               
-              file.copy(from = "R/reactivedata/prudentialitate.Rmd",
+              file.copy(from = "prudentialitate.Rmd",
                         to =  tempReport,
                         overwrite = TRUE)
               file.copy(from = "R/reactivedata/template_prudentialitate.docx",
                         to =  templateReport,
                         overwrite = TRUE)
               
-              fonduri_proprii = readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
+              fonduri_proprii <-  readRDS("R/reactivedata/solduri/baza_plafoane.rds") %>% 
                 dplyr::filter(data_raport == vals$report_date) %>% dplyr::pull(Fonduri_proprii) %>% max(.,1)
               
               tabel7 <- readRDS("R/reactivedata/finantari/tabel7.rds") %>%

@@ -171,8 +171,8 @@ Se respectă prevederea politicii de risc privind expunerea maximă a Fondului f
   flextable::add_header_row(top = T,values = c("Grup","Membrii grupului",""),
                             colwidths = c(2,2,4)) %>% 
   flextable::border_inner_v(part = "header") %>%
-  flextable::footnote(j = 7,i = 1,value = flextable::as_paragraph(
-  "Cu excepţia expunerii faţă de filiala Focşani, toate expunerile din tabelul 7 faţă de persoanele aflate în relaţii speciale sunt provizionate integral.")) %>%
+ # flextable::footnote(j = 7,i = 1,value = flextable::as_paragraph(
+  #"Cu excepţia expunerii faţă de filiala Focşani, toate expunerile din tabelul 7 faţă de persoanele aflate în relaţii speciale #sunt provizionate integral.")) %>%
   flextable::theme_vanilla() %>% flextable::fontsize(j = 1:8,size = 8,part = "all") %>%
   flextable::width(j = 1:4,width = 1.9,unit = "in") %>% flextable::width(j = 5,width = 3,unit = "in") 
 #%>%   flextable::fontsize(j = 5,size = 8,part = "footer")
@@ -237,15 +237,11 @@ flextable::flextable(data = params$tabel9 %>% dplyr::mutate(Pondere_Surse_Propri
 
 ```{r}
 
-tryCatch( expr = {
-  
- 
 flextable::flextable(data = params$tabel10 %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Ponderi"), .fns = ~.x*100)) %>% setNames(nm = stringr::str_replace_all(string = colnames(.),pattern = "_",replacement = " ")) ) %>% 
     flextable::colformat_double(j = if (sum(stringr::str_detect( string = names(params$tabel10), pattern = "Ponderi")) == 0)
               0  else stringr::str_which(string = names(params$tabel10), pattern = "Ponderi"), suffix = "%",digits = 1) %>%
      flextable::theme_vanilla() %>% flextable::width(j = 1,width = 2,unit = "in") %>% flextable::width(j = if (sum(stringr::str_detect( string = names(params$tabel10), pattern = "Ponderi|Expunere")) == 0)
-              0  else stringr::str_which(string = names(params$tabel10), pattern = "Ponderi|Expunere"),width = 1.05,unit = "in") }, error = function(e) matrix("Check Tabel 10 in plasamente",nrow = 1,ncol = 5) %>% data.frame() %>% flextable::flextable(data = .) )
- 
+              0  else stringr::str_which(string = names(params$tabel10), pattern = "Ponderi|Expunere"),width = 1.05,unit = "in") 
  
 
 pondere_obligatiuni <- params$tabel10 %>% dplyr::filter(tip_plasament=="obligatiuni_corporative") %>% dplyr::pull(3) 
@@ -350,7 +346,8 @@ flextable::flextable(data = data.frame("Director Executiv Direcţia risc" = c("C
 <br>  
 
 ```{r}
-flextable::flextable(data = params$anexaA %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Utilizare"),.fns = ~.x*100))) %>% flextable::colformat_double(j = 5:6,digits = 1,suffix = "%") %>% flextable::colformat_double(j = 3,digits = 0) %>% flextable::footnote(part = "header",j = 1,value = flextable::as_paragraph("Clasele de risc sunt ajustate cu rata plăţilor în conformitate cu Procedura de lucru 15 cu privire la determinarea clasei de risc a clientelei unui finanţator.")) %>% flextable::width(j = c(1,3,5,6),width = 1,unit = "in") %>% flextable::width(j = 2,width = 2,unit = "in") %>%
+
+flextable::flextable(data = params$anexaA %>% dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("Utilizare"),.fns = ~.x*100))) %>% flextable::colformat_double(j = 5:6,digits = 1,suffix = "%") %>% flextable::colformat_double(j = 3,digits = 0) %>% #flextable::footnote(part = "header",j = 1,value = flextable::as_paragraph("Clasele de risc sunt ajustate cu rata plăţilor în #conformitate cu Procedura de lucru 15 cu privire la determinarea clasei de risc a clientelei unui finanţator.")) %>% flextable::width(j = c(1,3,5,6),width = 1,unit = "in") %>% flextable::width(j = 2,width = 2,unit = "in") %>%
   flextable::width(j = 4,width = 1.06,unit = "in")
 
 ```

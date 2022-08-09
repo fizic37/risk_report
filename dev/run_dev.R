@@ -1,5 +1,5 @@
 # Set options here
-options(golem.app.prod = FALSE,shiny.maxRequestSize=100*1024^2, warn=-1,
+options(golem.app.prod = TRUE,shiny.maxRequestSize=100*1024^2, warn=-1,
         shiny.sanitize.errors=FALSE) # TRUE = production mode, FALSE = development mode
 
 # Detach all loaded packages and clean your environment

@@ -106,7 +106,7 @@ mod_final_report_server <- function(id,vals){
       showModal(modalDialog(title = "ATENTIE!",size = "l",
               h3(paste0("Esti sigur ca vrei generezi raportul de prudentialitate la data de ",vals$report_date, " ?") ),
               footer = tagList(
-                h6("Procesarea poate dura cateva secunde"),
+                div(style = "color: #ffa159; padding-right: 120px; padding-top: 7px;", h6("Procesarea poate dura cateva secunde") ),
                 shinyWidgets::downloadBttn(outputId = session$ns("generate_report"),label = "Download",
                               style = "stretch", color = "success", size = "md"),
                 shinyWidgets::actionBttn(inputId = session$ns("cancel_download"),label = "Cancel",style = "stretch",

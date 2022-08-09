@@ -18,10 +18,12 @@ mod_grupuri_ui <- function(id){
                  fluidPage( 
                    shinybusy::add_busy_spinner(  color = "#ff007b",    position = "bottom-right",    timeout = 200    ),
                    fluidRow(
-                     column( width = 3, fileInput(  inputId = ns("grupuri_upload"),
+                     column( width = 2, fileInput(  inputId = ns("grupuri_upload"),
                                                     label = "Upload grupuri", width = "300px", accept = c(".xlsx", ".xls"),
                                                     buttonLabel = "Excel only", placeholder = "No file uploaded")    ),
-                     column(width = 6, uiOutput(ns("show_toggle_missing"))),
+                     column(width = 4, uiOutput(ns("show_toggle_missing"))),
+                     
+                     column(width = 3, uiOutput(ns("show_down_grupuri_partiale")) ),
                      
                      column(width = 3, uiOutput(ns("show_grup_date"))),
                    
@@ -94,7 +96,7 @@ mod_grupuri_server <- function(id, vals){
           dplyr::left_join( grupuri_reactive$bi_grupuri, by = c("Nrcontract" = "Numar contract")) 
         
         
-        # I process tipologie conventie, for every contract that contains OUG sau AGRO it will be garantie_stat
+        # I process tipologie conventie, for every contract that contains OUG, AGRO, PROD, GCU sau GCI it will be garantie_stat
         grupuri_reactive$filtered_data <- grupuri_reactive$filtered_data %>%
           dplyr::mutate(tipologie_conventie = ifelse( is.na(tipologie_conventie) & 
               stringr::str_detect(string = grupuri_reactive$filtered_data$Nrcontract, pattern = "OUG|AGRO|PROD|GCU|GCI"),
@@ -108,18 +110,31 @@ mod_grupuri_server <- function(id, vals){
           dplyr::mutate(unic_tipologie = ifelse(tipologie_conventie %in% c("surse_proprii", "surse_administrare", "finantare"),
               "surse_proprii sau administrare", ifelse(is.na(tipologie_conventie),"fara_contract","garantii_stat")))
         
+        
         if ( length( grupuri_reactive$filtered_data$Nrcontract[is.na(
           grupuri_reactive$filtered_data$tipologie_conventie) & grupuri_reactive$filtered_data$Nrcontract!="-"]) >0 ) {
           grupuri_reactive$need_more_data <- 'TRUE'
         }
         
+        output$show_down_grupuri_partiale <- renderUI({ 
+          req( grupuri_reactive$filtered_data, grupuri_reactive$need_more_data == 'TRUE' )
+          
+          div(style = "padding-top: 35px;", shinyWidgets::downloadBttn(outputId = ns("down_grupuri_partiale"),
+            label = "Download grupuri partiale", style = "simple",color = "success",size = "sm") )  })
+        
+        output$down_grupuri_partiale <- downloadHandler(filename = function() {
+              paste0("grupuri_partiale_",input$data_grupuri,".csv") },
+              content = function(file) { readr::write_csv(x = grupuri_reactive$grupuri_selectate, file = file ) } )
+        
+        
         
         output$show_toggle_missing <- renderUI({ 
           switch( grupuri_reactive$need_more_data,
                  'TRUE' = tagList( br(),
-                div(style="margin-left:70px; padding-top: 8px;",
-                shinyWidgets::actionBttn(ns("show_missing"),icon =icon("circle-plus"), style="stretch",color="danger",
-                                   label = "STOP, am nevoie de informatii actualizate. Click aici!") ) ),
+                div(style="margin-left:20px; padding-top: 10px;",
+                shinyWidgets::actionBttn(ns("show_missing"),icon =icon("hand"), 
+                                         color="danger",style = "simple", size="sm",
+                                   label = "STOP, click here to update BI") ) ),
                 'FALSE' = div( style="margin-left:120px; padding-top: 28px;",
                                    shinyWidgets::actionBttn(ns("save_grupuri"),label = "Salveaza grupurile uploadate",
                               color = "success",style = "stretch",size = "md",icon = icon("save")) ) 
@@ -161,7 +176,7 @@ mod_grupuri_server <- function(id, vals){
                  'TRUE' =  DT::datatable(data =  grupuri_reactive$filtered_data %>% dplyr::filter(is.na(tipologie_conventie) & 
                               Nrcontract!="-") %>% dplyr::mutate(dplyr::across(.cols = 3:4, ~as.factor(.x))), 
                               options = list(pageLength = 4, dom = "Ftp", scrollY=TRUE),filter = "top",
-                              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left; color: #ff007b;',
+                              caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left; color: #ff5964;',
                                "Nu se constituie grupurile de mai jos din cauza lipsei conventiei. Click pe 
                                 butonul Stop de mai sus pentru a actualiza BI-ul."), rownames = F),
                  'FALSE' = DT::datatable(data = grupuri_reactive$grupuri_selectate %>% 
@@ -179,7 +194,7 @@ mod_grupuri_server <- function(id, vals){
         })
         
         
-        output$grupuri_detaliate <- DT::renderDataTable({ req( grupuri_reactive$need_more_data == FALSE )
+        output$grupuri_detaliate <- DT::renderDataTable({ req( grupuri_reactive$need_more_data == 'FALSE' )
           
             DT::datatable(
               data = grupuri_reactive$grupuri_selectate %>% 

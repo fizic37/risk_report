@@ -101,7 +101,7 @@ mod_garantii_upload_server <- function(id, vals){
       
       sumar_upload <- reactive({ req(portofoliu_second_read())
         portofoliu_second_read() %>% dplyr::mutate("Tip fonduri" = 
-                                                     ifelse(`Tip fonduri`=="01.Fd. proprii",`Produs[centralizat]`,`Tip fonduri`)) %>% 
+            ifelse(`Tip fonduri`=="01.Fd. proprii",`Produs[centralizat]`,`Tip fonduri`)) %>% 
           dplyr::group_by(Tip_surse, Program = `Tip fonduri`) %>%
           dplyr::summarise(Nr_contracte = dplyr::n(), Nr_beneficiari = dplyr::n_distinct(`Cod Partener`),
                            Sold_garantii=sum(`Soldul garantiei [in LEI]`), 
@@ -182,14 +182,16 @@ mod_garantii_upload_server <- function(id, vals){
                              Nr_beneficiari = dplyr::n_distinct(`Cod Partener`),
                              Sold_garantii = sum(`Soldul garantiei [in LEI]`),
                              Sold_credite_garantate = sum(`Soldul creditului [in LEI]`)) %>%
-        dplyr::ungroup() %>% dplyr::mutate(data_raport = input$data_upload_sold, 
-                                           id_column = paste0(input$data_upload_sold,`Tip fonduri`))
-      vals_portof_upload$view_solduri_prelucrate <- vals$view_baza_solduri %>% 
-        dplyr::mutate(id_column = paste0(data_raport,`Tip fonduri`)) %>%
-          dplyr::filter( !id_column %in% vals_portof_upload$view_sold_uploadat$id_column)
+        dplyr::ungroup() %>% dplyr::mutate(data_raport = input$data_upload_sold)
       
-      vals$view_baza_solduri <- dplyr::bind_rows(vals_portof_upload$view_sold_uploadat %>% dplyr::select(-id_column), 
-                                    vals_portof_upload$view_solduri_prelucrate %>% dplyr::select(-id_column))
+      
+      vals_portof_upload$view_solduri_prelucrate <- dplyr::bind_rows(
+          vals$view_baza_solduri %>% dplyr::filter(data_raport != input$data_upload_sold),
+          vals$view_baza_solduri %>% dplyr::filter( data_raport == input$data_upload_sold &
+            `Tip fonduri` %in% c("Prima Casa", "Investeste in tine", "OUG37") )  ) 
+      
+      vals$view_baza_solduri <- dplyr::bind_rows(vals_portof_upload$view_sold_uploadat,
+                                                 vals_portof_upload$view_solduri_prelucrate)
                                                   
       
       saveRDS(object = vals$view_baza_solduri,file = "R/reactivedata/solduri/view_baza_sold.rds")

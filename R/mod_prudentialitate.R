@@ -152,9 +152,8 @@ mod_prudentialitate_server <- function(id, vals){
               .x = `Tip fonduri`,
               .y = Solduri_luna_raportare,
               .f = ~ (.y /
-                        sum(vals$view_baza_solduri$Sold_garantii[vals$view_baza_solduri$`Tip fonduri` == .x &
-                                                                   vals$view_baza_solduri$data_raport == vals$previous_year])) -
-                1
+              sum(vals$view_baza_solduri$Sold_garantii[vals$view_baza_solduri$`Tip fonduri` == .x &
+              vals$view_baza_solduri$data_raport == vals$previous_year])) - 1
             ),
             Variatie_contracte_luna_anterioara = purrr::map2_dbl(
               .x = `Tip fonduri`,
@@ -177,7 +176,7 @@ mod_prudentialitate_server <- function(id, vals){
                            stringr::str_trim(string = ., side = "left") %>%
                            stringr::str_replace_all(string = .,  pattern = "INVEST",replacement = "IMM INVEST" ) %>%
                            stringr::str_replace_all(string = .,  pattern = "AGRO",  replacement = "IMM AGRO"))
-        
+      
         # I calculate totals for Tip_surse of tabel1
         vals_prudent$tabel1_totals <- vals$view_baza_solduri %>% dplyr::filter(data_raport == vals$report_date) %>%
           dplyr::group_by(Tip_surse) %>% dplyr::mutate(rank = dplyr::cur_group_id()) %>%

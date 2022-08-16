@@ -15,7 +15,7 @@ app_ui <- function(request) {
               #bs4Dash::tabItem(tabName = "garantii"),
               bs4Dash::tabItem(tabName = "prudentialitate", mod_prudentialitate_ui("prudentialitate_ui_1")),
               bs4Dash::tabItem(tabName = "prima_casa", mod_raportare_bnr_ui("raportare_bnr_ui_1")),
-              bs4Dash::tabItem(tabName = "banci", mod_rating_database_ui("rating_database_ui_1")),
+              bs4Dash::tabItem(tabName = "banci", mod_rating_ui("rating_ui_1")),
               bs4Dash::tabItem(tabName = "admin",  mod_admin_ui("admin_ui_1"))
               ) ),
               header = bs4Dash::dashboardHeader(title = "Risk Reporting"))

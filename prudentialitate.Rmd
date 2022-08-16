@@ -194,7 +194,7 @@ La data de `r params$luna_curenta` nu au fost înregistrate expuneri mari faţă
 
 Evoluţia principalelor componente ale provizioanelor specifice aferente garanţiilor plătite sunt prezentate în tabelul 8 de mai jos:  
 
-*Tabelul 8*  
+*Tabelul 8 – Evoluţia provizioanelor specifice aferente plăţilor de garanţii*  
 
 ```{r}
 flextable::flextable(data = params$tabel8 %>% dplyr::mutate(Acoperire_Provizioane = Acoperire_Provizioane*100) %>% 

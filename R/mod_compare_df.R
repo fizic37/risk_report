@@ -41,7 +41,8 @@ mod_compare_df_server <- function(input, output, session,df_reactive, green = "#
         
       else {
         shinyWidgets::sendSweetAlert(session = session,title = "NO PROCESSING",type = "error",
-              text = paste("A aparut o problema la salvare",df_reactive$check_upload))
+              text = paste("A aparut o problema la salvare",janitor::compare_df_cols_same(df_reactive$df_old, df_reactive$df_new, 
+                    bind_method = "bind_rows", verbose = TRUE)))
       }  
         
     }  

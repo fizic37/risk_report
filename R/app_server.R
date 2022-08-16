@@ -46,6 +46,10 @@ app_server <- function( input, output, session ) {
     
     
     if (sum("banci" == vals$sidebar_selected)==1) {
+      vals$baza_date_rating <- readRDS( "R/reactivedata/banci/baza_date_rating.rds" )
+      
+      mod_rating_update_server("rating_update_ui_1", vals)
+      
       mod_rating_database_server("rating_database_ui_1", vals)
       
       vals$sidebar_selected <- c(vals$sidebar_selected,"banci") }

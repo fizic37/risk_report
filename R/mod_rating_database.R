@@ -15,10 +15,11 @@ mod_rating_database_ui <- function(id){
     
     column(width = 12, h6("Baza de date a ratingurilor. Editeaza-o cu atentie!", style = "color:#ff007b"), br()),
     
-    column(width = 6,shinyWidgets::actionBttn(ns("save_baza_date"),label = "Salveaza modificarile bazei de date",
+    column(width = 8,shinyWidgets::actionBttn(ns("save_baza_date"),label = "De aici salvezi 
+                                modificarile bazei de date din excel-ul de mai jos",
                     icon = icon("save"),style = "stretch",color = "primary")),
     
-    column(width = 6, shinyWidgets::downloadBttn(ns("down_baza_date"),label = "Donwload baza de date",
+    column(width = 4, shinyWidgets::downloadBttn(ns("down_baza_date"),label = "Download baza de date",
                                                  style = "stretch",color = "primary")),
     column(width = 12, br()),
     
@@ -45,17 +46,18 @@ mod_rating_database_server <- function(id, vals){
     output$baza_date_rating <- rhandsontable::renderRHandsontable( { req( vals$baza_date_rating )
       
     rhandsontable::rhandsontable( data = vals$baza_date_rating %>% dplyr::select(-CodFinantator),
-                      readOnly = FALSE,width = 1350, height = 600, 
+                      readOnly = FALSE,width = 1370, height = 600, 
                       rowHeaderWidth = 100,search = TRUE,rowHeaders = NULL ) %>% 
       
-      rhandsontable::hot_cols(manualColumnResize = TRUE, colWidths = c(150,rep(110,17))) %>%
+      rhandsontable::hot_cols(manualColumnResize = TRUE, colWidths = c(150,rep(112,18))) %>%
       
       rhandsontable::hot_col(col = "DenumireFinantator",type = "dropdown",
                              source = unique(tabela_nume_banci$DenumireFinantator)) %>%
       
       rhandsontable::hot_col( col = "Are_rating_extern",  type = "dropdown",
                               source = c("DA","NU"),strict = TRUE,  allowInvalid = FALSE ) %>%
-      rhandsontable::hot_col(col = c("Active", "Limita_Banca"), type = "numeric",format = "000,000") %>%
+      rhandsontable::hot_col(col = c("Active", "Limita_Banca", "Resurse_financiare_totale"),
+                             type = "numeric",format = "000,000") %>%
       
       rhandsontable::hot_col(col = "Clasa_Risc",type = "dropdown", source = c("A","B","C","D","E"),
                              strict = TRUE,  allowInvalid = FALSE) %>%
@@ -68,7 +70,7 @@ mod_rating_database_server <- function(id, vals){
                               ,strict = TRUE,  allowInvalid = FALSE ) %>%
       
       rhandsontable::hot_col( col = c("Rating_Extern"), type = "dropdown",  
-                              source = unique(mapare_rating$Ratings)#unique(NA_character_,mapare_rating$Ratings)
+                          source = unique(mapare_rating$Ratings)#unique(NA_character_,mapare_rating$Ratings)
                               ,strict = TRUE,  allowInvalid = FALSE )
     } )
     

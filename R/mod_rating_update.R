@@ -18,6 +18,7 @@ mod_rating_update_ui <- function(id){
              dateInput(inputId = ns("data_limite"),label = "Data la care voi afisa limitele in vigoare",
                        min = as.Date("2020-08-28"),value = Sys.Date(),language = "ro",autoclose = TRUE),
              hr() ),
+     
       
       column(width = 12,DT::dataTableOutput(outputId = ns("baza_date_limite")), br()),
       
@@ -36,9 +37,7 @@ mod_rating_update_server <- function(id, vals){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-   #baza_date_rating <- readRDS( "R/reactivedata/banci/baza_date_rating.rds" )
-    
-    tabela_nume_banci <- readRDS(file = "R/reactivedata/banci/tabela_nume_banci.rds")
+   tabela_nume_banci <- readRDS(file = "R/reactivedata/banci/tabela_nume_banci.rds")
     
     mapare_rating <- readRDS("R/reactivedata/banci/mapare_rating.rds") %>% dplyr::mutate(id = paste0(Agentie,Ratings))
     
@@ -76,6 +75,17 @@ mod_rating_update_server <- function(id, vals){
       
       vals_rating$banca_selectata <-  baza_date_limite_filtrata()  %>%  dplyr::slice(input$baza_date_limite_rows_selected)
       
+      vals_rating$tabel_scor_financiar <- data.frame(  Solvabilitate = vals_rating$banca_selectata$Solvabilitate,
+                                                       Rata_Credite_Neperf =  vals_rating$banca_selectata$Rata_Credite_Neperf,
+                                                       Grad_Acoperie_Neperf = vals_rating$banca_selectata$Grad_Acoperie_Neperf,
+                                                       ROE = vals_rating$banca_selectata$ROE,
+                                                       Cost_Venit = vals_rating$banca_selectata$Cost_Venit,
+                                                       Credite_Depozite = vals_rating$banca_selectata$Credite_Depozite,
+                                                       Opinia_Auditorului = vals_rating$banca_selectata$Opinia_Auditorului,
+                                                       Actionariat = vals_rating$banca_selectata$Actionariat,
+                                                       row.names = vals_rating$banca_selectata$DenumireFinantator) %>% 
+        dplyr::mutate(dplyr::across(.cols = dplyr::everything(),  ~ifelse(is.na(.x),0,.x)))
+      
       
       
       showModal(session = session, modalDialog(size = "l",
@@ -83,7 +93,9 @@ mod_rating_update_server <- function(id, vals){
             footer = list( div(style = "padding-right: 100px; color: #ff007b; padding-top: 10px;",
             h6("Daca modifici Data Initiala, voi salva o noua limita de trezorerie") ),
             actionButton(ns("save_banca_rating"), label = "Save", icon = icon("save") ),
-            modalButton(label = "Close", icon = icon("times"))     ),
+            #modalButton(label = "Close", icon = icon("times"))
+            actionButton(ns("close_modal"),label = "Close",icon = icon("times"))
+            ),
                                                
             fluidRow( column(width = 6,   shinyWidgets::pickerInput( ns("select_denumire_finantator_rating"),
                       label = "Denumire Finantator", options = list(`live-search` = TRUE),
@@ -97,6 +109,7 @@ mod_rating_update_server <- function(id, vals){
                             label = "Resursele financiare", align = "right",
                                 decimalPlaces = 0, value =  vals_rating$banca_selectata$Resurse_financiare_totale),
                       textOutput(ns("warning_resurse_financiare")),
+                      tags$head(tags$style("#rating_update_ui_1-warning_resurse_financiare{color: #ff00fb;")),
                                                                 
                       shinyWidgets::pickerInput( inputId = ns("pondere_banca"),
                          choices = c(0.2, 0.15, 0.1, 0.05),
@@ -128,14 +141,15 @@ mod_rating_update_server <- function(id, vals){
                      shinyWidgets::pickerInput( ns("are_rating"),
                          selected = vals_rating$banca_selectata$Are_rating_extern,
                             label = "Are rating extern", choices = c("DA", "NU") ),
-                                                      
+                                               
                                                      
-                                                     uiOutput(ns("show_ratings")),
-                                                      uiOutput(ns("show_scor"))
+                        uiOutput(ns("show_ratings")),
+                        uiOutput(ns("show_scor"))
                                                ),
                                                
-                                               column(width = 12, rhandsontable::rHandsontableOutput(outputId = ns("tabel_scoring")))
-                                               )
+                column(width = 12, rhandsontable::rHandsontableOutput(outputId = ns("tabel_scoring"))),
+      
+                                                     )
       ))
       
       #shinyjs::disable('select_clasa_risc_rating')
@@ -170,8 +184,9 @@ mod_rating_update_server <- function(id, vals){
       req(input$resurse_financiare,vals_rating$banca_selectata)
       
       if (input$resurse_financiare != vals_rating$banca_selectata$Resurse_financiare_totale) {
-        paste0("Resursele financiare salvate sunt - ", vals_rating$banca_selectata$Resurse_financiare_totale,
-               " si sunt diferite de cele afisate/calculate")
+        paste0("Resursele financiare salvate sunt - ", formatC(digits = 0,format = "d",big.mark = ",",
+          vals_rating$banca_selectata$Resurse_financiare_totale),
+               " lei si sunt diferite de cele afisate/calculate")
       }
     })
     
@@ -181,10 +196,11 @@ mod_rating_update_server <- function(id, vals){
       fluidRow(
         selectInput(inputId = session$ns("select_agentie"),label = "Agentia de rating",
                     choices = unique(mapare_rating$Agentie),
-                    selected = vals_rating$banca_selectata$Agentie %>% unique() ),
+                    selected = vals_rating$banca_selectata$Agentie),
         
         selectInput(inputId = session$ns("select_rating"),label = "Rating-ul",
-                    choices = unique(mapare_rating$Ratings) )
+                    choices = unique(mapare_rating$Ratings), 
+                    selected = vals_rating$banca_selectata$Rating_Extern )
         
       )
       
@@ -199,23 +215,18 @@ mod_rating_update_server <- function(id, vals){
     })
     
     # I show tabel pentru calcul scor final only when are_rating == NU
-    output$tabel_scoring <-   rhandsontable::renderRHandsontable( {  req(input$are_rating == "NU")
+   
+   
+     output$tabel_scoring <-   rhandsontable::renderRHandsontable( {  
+     req(input$are_rating == "NU", vals_rating$tabel_scor_financiar)
       
       rhandsontable::rhandsontable(
-        data = data.frame(  Solvabilitate = vals_rating$banca_selectata$Solvabilitate,
-                            Rata_Credite_Neperf =  vals_rating$banca_selectata$Rata_Credite_Neperf,
-                            Grad_Acoperie_Neperf = vals_rating$banca_selectata$Grad_Acoperie_Neperf,
-                            ROE = vals_rating$banca_selectata$ROE,
-                            Cost_Venit = vals_rating$banca_selectata$Cost_Venit,
-                            Credite_Depozite = vals_rating$banca_selectata$Credite_Depozite,
-                            Opinia_Auditorului = vals_rating$banca_selectata$Opinia_Auditorului,
-                            Actionariat = vals_rating$banca_selectata$Actionariat,
-                            row.names = vals_rating$banca_selectata$DenumireFinantator) %>% 
-          dplyr::mutate(dplyr::across(.cols = dplyr::everything(),  ~ifelse(is.na(.x),0,.x))),
+        data = vals_rating$tabel_scor_financiar,
         readOnly = FALSE, rowHeaderWidth = 100 ) %>% 
+        rhandsontable::hot_cols(manualColumnResize = TRUE) %>%
         rhandsontable::hot_col(hot = ., col = 1:6, format = "0.00%") %>%
         rhandsontable::hot_col( col = 7:8,  type = "dropdown",
-                                source = c(8, 4, 0),strict = TRUE,  allowInvalid = FALSE ) })
+            source = c(8, 4, 0),strict = TRUE,  allowInvalid = FALSE ) })
     
     # I show scor final only when are_rating == NU
     output$show_scor <- renderUI( { req(input$are_rating == "NU")
@@ -372,21 +383,29 @@ mod_rating_update_server <- function(id, vals){
       
       saveRDS(object = vals_rating$baza_date_rating, file = "R/reactivedata/banci/baza_date_rating.rds" )
       
-      #vals$baza_date_rating <- vals_rating$baza_date_rating
+      vals$baza_date_rating <- vals_rating$baza_date_rating
       
       vals_rating$finalise_process_compare_df <- FALSE
       
+      shinyjs::reset('confirm_save')
+      shinyjs::reset('save_banca_rating')
+      vals_rating$banca_selectata <- NULL
+      vals_rating$clasa_finala <- NULL
+      vals_rating$tabel_scoring <- NULL
+      vals_rating$tabel_scor_financiar <- NULL
+      vals_rating$scoring_final <- NULL
+      
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
-            .options = list("timeOut"=2000, 'positionClass'="toast-top-full-width", "progressBar" = TRUE))
+          .options = list("timeOut"=2000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
       
-      shinyjs::refresh()
-      
-      
-      
-      
-      
+    })
     
-      
+    observeEvent(input$close_modal,{
+      removeModal(session)
+      shinyjs::reset("are_rating")
+      vals_rating$tabel_scoring <- NULL
+      vals_rating$tabel_scor_financiar <- NULL
+      vals_rating$scoring_final <- NULL
     })
     
  

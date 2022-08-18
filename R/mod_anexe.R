@@ -88,8 +88,19 @@ mod_anexe_server <- function(id, vals){
         dplyr::left_join(tabela_nume_banci, by = c("Banca" = "CodFinantator")) %>%
         dplyr::group_by(Banca = DenumireFinantator) %>% dplyr::summarise(Plati = sum(Plata))
       
-      vals_anexe$clase_risc <- readRDS("R/reactivedata/banci/sinteza_limite.rds") %>%
-        dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date  ) 
+      # Else clause is legacy code. Since July 31st 2022 I only use baza_date_rating.rds
+      if ( vals$report_date >= as.Date("2022-07-31") ) {
+        vals_anexe$clase_risc <- readRDS("R/reactivedata/banci/baza_date_rating.rds") %>%
+          dplyr::select(CodFinantator, DenumireFinantator,ClasaRisc=Clasa_Risc, 
+                        LimitaTrezorerie=Limita_Banca, DataInitiala, DataExpirare) %>%
+          dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date) %>%
+          
+          dplyr::mutate(PlafonProcentual = ifelse(ClasaRisc=="A",0.3,ifelse(ClasaRisc=="B",0.23,
+                      ifelse(ClasaRisc=="C",0.18,ifelse(ClasaRisc=="D",0.13,NA_real_)))))
+              }  else { 
+                vals_anexe$clase_risc <- readRDS("R/reactivedata/banci/sinteza_limite.rds") %>%
+        dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date  ) }
+      
     
    
     vals_anexe$solduri_begining_year <- readRDS("R/reactivedata/solduri/baza_banci.rds") %>% 

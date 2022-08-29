@@ -90,13 +90,21 @@ mod_anexe_server <- function(id, vals){
       
       # Else clause is legacy code. Since July 31st 2022 I only use baza_date_rating.rds
       if ( vals$report_date >= as.Date("2022-07-31") ) {
-        vals_anexe$clase_risc <- readRDS("R/reactivedata/banci/baza_date_rating.rds") %>%
+        vals_anexe$clase_risc_prelucrate <- readRDS("R/reactivedata/banci/baza_date_rating.rds") %>%
           dplyr::select(CodFinantator, DenumireFinantator,ClasaRisc=Clasa_Risc, 
-                        LimitaTrezorerie=Limita_Banca, DataInitiala, DataExpirare) %>%
-          dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date) %>%
-          
+                        LimitaTrezorerie=Limita_Banca, DataInitiala) 
+        
+        vals_anexe$unique_dates <- unique(vals_anexe$clase_risc_prelucrate$DataInitiala) 
+        
+        vals_anexe$rating_date <- max(vals_anexe$unique_dates[which(vals_anexe$unique_dates <= vals$report_date)])
+        
+        vals_anexe$clase_risc <-   vals_anexe$clase_risc_prelucrate %>% 
+          dplyr::filter( DataInitiala == vals_anexe$rating_date ) %>%
           dplyr::mutate(PlafonProcentual = ifelse(ClasaRisc=="A",0.3,ifelse(ClasaRisc=="B",0.23,
-                      ifelse(ClasaRisc=="C",0.18,ifelse(ClasaRisc=="D",0.13,NA_real_)))))
+                    ifelse(ClasaRisc=="C",0.18,ifelse(ClasaRisc=="D",0.13,NA_real_)))))
+        
+        vals_anexe$caption_anexa_b <- paste0("Anexa B la data de ", vals$report_date, 
+                " Data la care sunt extrase limitele de expunere este ", vals_anexe$rating_date)
               }  else { 
                 vals_anexe$clase_risc <- readRDS("R/reactivedata/banci/sinteza_limite.rds") %>%
         dplyr::filter(DataInitiala <= vals$report_date &   DataExpirare >= vals$report_date  ) }
@@ -191,7 +199,7 @@ mod_anexe_server <- function(id, vals){
       DT::datatable(data = vals$anexaC_final, rownames = F, extensions = "Buttons",
                     options = list(dom = "Bfti", paging = FALSE, scrollY = "300px", buttons = c("copy","excel","csv")), 
                 caption = htmltools::tags$caption(style = 'caption-side: top; text-align: left;',
-                paste0("Anexa B la ", vals$report_date))) %>%
+                  vals_anexe$caption_anexa_b )) %>%
         DT::formatRound(columns = 3:6,digits = 0) %>% DT::formatPercentage(columns = 7,digits = 1)  })
    
   })
@@ -205,7 +213,7 @@ mod_anexe_server <- function(id, vals){
         dplyr::left_join(tabela_nume_banci, by = c("Banca" = "CodFinantator")) %>%  dplyr::group_by(Banca=DenumireFinantator) %>% 
         
         dplyr::summarise(Sold_Garantii=sum(`Soldul garantiei [in LEI]`)) %>%  
-        dplyr::left_join(y = vals_anexe$clase_risc %>% dplyr::select(2,3,7), by = c("Banca" = "DenumireFinantator") ) %>%
+        dplyr::left_join(y = vals_anexe$clase_risc %>% dplyr::select(2,3,6), by = c("Banca" = "DenumireFinantator") ) %>%
         dplyr::mutate(ClasaRisc = ifelse(Banca %in% vals_anexe$banci_ajustate$Banca, 
               vals_anexe$banci_ajustate$Clasa_Risc_Ajustata[match(Banca,vals_anexe$banci_ajustate$Banca)],ClasaRisc),
                       PlafonProcentual = ifelse(Banca %in% vals_anexe$banci_ajustate$Banca, 

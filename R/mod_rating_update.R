@@ -50,18 +50,25 @@ mod_rating_update_server <- function(id, vals){
     
     baza_date_limite_filtrata <- reactive( { req(vals$baza_date_rating)
       
-      vals$baza_date_rating %>% 
-        dplyr::filter(DataInitiala <= input$data_limite, DataExpirare >= input$data_limite) %>% 
+      # I want to show the maximum available date for a bank limit
+      vals$baza_date_rating %>% dplyr::left_join( by = "DenumireFinantator", y = vals$baza_date_rating %>% 
+        dplyr::filter(DataInitiala <= input$data_limite) %>% 
+          dplyr::group_by(DenumireFinantator) %>% dplyr::summarise(max_date = max(DataInitiala) ) ) %>%
+        dplyr::filter(DataInitiala == max_date) %>% dplyr::select(-max_date) %>% 
         dplyr::arrange(Clasa_Risc, desc(Limita_Banca))
     })
     
     
     output$baza_date_limite <- DT::renderDataTable( { req( baza_date_limite_filtrata() )
+      
       DT::datatable( data =  baza_date_limite_filtrata() %>% dplyr::select( DenumireFinantator,
-                  Are_rating_extern, Clasa_Risc, Limita_Banca, DataInitiala, DataExpirare) %>%
-                       dplyr::mutate(dplyr::across(.cols = where(is.character),  ~as.factor(.x))),
+                  Are_rating_extern, Clasa_Risc, Limita_Banca, DataInitiala) %>%
+                    #dplyr::mutate(dplyr::across(.cols = DataInitiala,~as.character(.x))) %>%
+                    dplyr::mutate(dplyr::across(.cols = where(is.character),  ~as.factor(.x))),
                      
-                     options = list( scrollY = "300px", paging = FALSE, dom = "Bt",buttons = c("copy", "excel", "csv") ),
+                     options = list( scrollY = "300px", paging = FALSE, dom = "Bt",buttons = c("copy", "excel", "csv"),
+                                     columnDefs = list(list(width = '50px', targets = 1:3),
+                                                       list(width = '100px', targets = c(0,4)) ) ),
                      
                      extensions = "Buttons", filter = "top",rownames = FALSE, 
                      selection = list( mode = "single", selected = NULL, target = "row"),
@@ -86,7 +93,30 @@ mod_rating_update_server <- function(id, vals){
                                                        row.names = vals_rating$banca_selectata$DenumireFinantator) %>% 
         dplyr::mutate(dplyr::across(.cols = dplyr::everything(),  ~ifelse(is.na(.x),0,.x)))
       
+      vals_rating$scoring_final <-  ifelse( vals_rating$tabel_scor_financiar$Solvabilitate > 0.15,    8,
+                                            ifelse(vals_rating$tabel_scor_financiar$Solvabilitate>=0.12,4,0)) + 
+        ifelse(vals_rating$tabel_scor_financiar$Rata_Credite_Neperf<0.03,8,
+               ifelse(vals_rating$tabel_scor_financiar$Rata_Credite_Neperf<=0.08,4,0)) + 
+        ifelse(vals_rating$tabel_scor_financiar$Grad_Acoperie_Neperf>0.55,8,
+               ifelse(vals_rating$tabel_scor_financiar$Grad_Acoperie_Neperf>=0.4,4,0)) + 
+        ifelse(vals_rating$tabel_scor_financiar$ROE>0.1,8,
+               ifelse(vals_rating$tabel_scor_financiar$ROE>=0.06,4,0)) + 
+        ifelse(vals_rating$tabel_scor_financiar$Cost_Venit<0.5,8,
+               ifelse(vals_rating$tabel_scor_financiar$Cost_Venit<=0.6,4,0)) + 
+        ifelse(vals_rating$tabel_scor_financiar$Credite_Depozite<1,4,
+               ifelse(vals_rating$tabel_scor_financiar$Credite_Depozite<=1.5,2,0)) + 
+        vals_rating$tabel_scor_financiar$Opinia_Auditorului+vals_rating$tabel_scor_financiar$Actionariat
       
+      vals_rating$pondere_clasa_risc <- ifelse( vals_rating$banca_selectata$Clasa_Risc == "A",
+                                                '0.2',
+                                                ifelse(
+                                                  vals_rating$banca_selectata$Clasa_Risc == "B",
+                                                  '0.15',
+                                                  ifelse(
+                                                    vals_rating$banca_selectata$Clasa_Risc == "C",
+                                                    '0.1',
+                                                    ifelse(vals_rating$banca_selectata$Clasa_Risc == "D", '0.05',
+                                                           '0'))) )
       
       showModal(session = session, modalDialog(size = "l",
             title = paste0( "Editeaza banca ", vals_rating$banca_selectata$DenumireFinantator),
@@ -112,17 +142,12 @@ mod_rating_update_server <- function(id, vals){
                       tags$head(tags$style("#rating_update_ui_1-warning_resurse_financiare{color: #ff00fb;")),
                                                                 
                       shinyWidgets::pickerInput( inputId = ns("pondere_banca"),
-                         choices = c(0.2, 0.15, 0.1, 0.05),
+                         choices = c(0.2, 0.15, 0.1, 0.05),selected = vals_rating$pondere_clasa_risc,
                                label = 'Pondere clasa de risc' ),
                       
-                      shinyjs::disable(id = 'pondere_banca', asis = FALSE),
+                      #shinyjs::disable(id = 'pondere_banca', asis = FALSE),
                                                                 
-                      shinyWidgets::autonumericInput( ns("limita_trezorerie_rating"),
-                        align = "right", decimalPlaces = 0, label = "Limita trezorerie",
-                        value = vals_rating$banca_selectata$Limita_Banca),
-                      textOutput(ns("warning_limita_trezorerie")),
-                      tags$head(tags$style("#rating_update_ui_1-warning_limita_trezorerie{color: #ff00fb;")),
-                                                                
+                      
                       shinyWidgets::pickerInput( ns("select_clasa_risc_rating"),
                        label = "Clasa de Risc", choices = c("A", "B", "C", "D", "E"),
                         selected = vals_rating$banca_selectata$Clasa_Risc ),
@@ -134,15 +159,16 @@ mod_rating_update_server <- function(id, vals){
                        label = "Data Initiala",language = "ro", autoClose = TRUE,
                          value = vals_rating$banca_selectata$DataInitiala ), 
         
-                           shinyWidgets::airDatepickerInput( ns("data_expirare_rating"),
-                                  label = "Data Expirare", language = "ro", autoClose = TRUE,
-                                         value = vals_rating$banca_selectata$DataExpirare ),
-                                              
+                           
                      shinyWidgets::pickerInput( ns("are_rating"),
                          selected = vals_rating$banca_selectata$Are_rating_extern,
                             label = "Are rating extern", choices = c("DA", "NU") ),
-                                               
-                                                     
+             shinyWidgets::autonumericInput( ns("limita_trezorerie_rating"),
+                                             align = "right", decimalPlaces = 0, label = "Limita trezorerie",
+                                             value = vals_rating$banca_selectata$Limita_Banca),
+             textOutput(ns("warning_limita_trezorerie")),
+             tags$head(tags$style("#rating_update_ui_1-warning_limita_trezorerie{color: #ff00fb;")),                          
+                                                    
                         uiOutput(ns("show_ratings")),
                         uiOutput(ns("show_scor"))
                                                ),
@@ -159,6 +185,7 @@ mod_rating_update_server <- function(id, vals){
     }, ignoreInit = TRUE, ignoreNULL = TRUE  )
     
     
+   
     output$warning_select_clasa_risc_rating <- renderText({ 
       req(input$select_clasa_risc_rating,vals_rating$banca_selectata)
       
@@ -208,10 +235,10 @@ mod_rating_update_server <- function(id, vals){
     
    
     # Below observer updates select_rating in functie de agentia de rating (agentiile au ratinguri diferite)
-    observeEvent(input$select_agentie,{
+    observeEvent( c(input$select_agentie,vals_rating$banca_selectata$Rating_Extern), { req(input$select_agentie)
       updateSelectInput(session = session,inputId = 'select_rating',
-                        choices = mapare_rating %>% dplyr::filter(Agentie == input$select_agentie) %>% dplyr::pull(Ratings),
-                        selected = vals_rating$banca_selectata$Rating_Extern )
+      choices = mapare_rating %>% dplyr::filter(Agentie == input$select_agentie) %>% dplyr::pull(Ratings),
+      selected = vals_rating$banca_selectata$Rating_Extern )
     })
     
     # I show tabel pentru calcul scor final only when are_rating == NU
@@ -230,7 +257,8 @@ mod_rating_update_server <- function(id, vals){
     
     # I show scor final only when are_rating == NU
     output$show_scor <- renderUI( { req(input$are_rating == "NU")
-      numericInput(inputId = ns("scor_final"),label = "Scor final",value = 0,min = 0,max = 60)
+      numericInput(inputId = ns("scor_final"),label = "Scor final",
+                   value = vals_rating$scoring_final, min = 0, max = 60)
     })
     
     # I calculate scor final, I update scor final UI and select clasa risc ratin UI
@@ -268,7 +296,7 @@ mod_rating_update_server <- function(id, vals){
     
     
     # I update select clasa risc UI whenever select clasa risc rating changes 
-    observeEvent(input$select_rating,{
+    observeEvent( input$select_rating,{ req(input$select_agentie)
       shinyWidgets::updatePickerInput(session = session,inputId = 'select_clasa_risc_rating', selected = 
           mapare_rating %>% dplyr::filter(Agentie == input$select_agentie, Ratings == input$select_rating) %>% 
                                         dplyr::pull(Clasa_Risc) %>% unique())
@@ -281,22 +309,37 @@ mod_rating_update_server <- function(id, vals){
     # I update pondere banca UI everytime input$select_clasa_risc changes. This input changes also through updateselectinput
     # which is activated when select_rating and when  inout$tabel_scoring.
     observeEvent( input$select_clasa_risc_rating,{
+      vals_rating$pondere_clasa_risc <- ifelse( input$select_clasa_risc_rating == "A",
+                                                '0.2',
+                                                ifelse(
+                                                  input$select_clasa_risc_rating == "B",
+                                                  '0.15',
+                                                  ifelse(
+                                                    input$select_clasa_risc_rating == "C",
+                                                    '0.1',
+                                                    ifelse(input$select_clasa_risc_rating == "D", '0.05',
+                                                           '0'))) )
+       shinyWidgets::updatePickerInput(session = session,inputId = "pondere_banca",
+         selected = vals_rating$pondere_clasa_risc )
+          
+       #mapare_rating %>% dplyr::filter(Clasa_Risc == input$select_clasa_risc_rating) %>%
+              #                   dplyr::slice(1) %>% dplyr::pull(Pondere_Resurse)
       
-      shinyWidgets::updatePickerInput(session = session,inputId = "pondere_banca",
-                selected = mapare_rating %>% dplyr::filter(Clasa_Risc == input$select_clasa_risc_rating) %>%
-                        dplyr::slice(1) %>% dplyr::pull(Pondere_Resurse))
-      
-      
-    })
+     })
     
   
     
-    limita_trezorerie <-  eventReactive( c(input$pondere_banca, input$resurse_financiare),{
+    limita_trezorerie <-  eventReactive( c(input$pondere_banca, input$resurse_financiare, 
+                    input$select_clasa_risc_rating, input$active_banca),
+        {
       new_limit <- min( 0.04*input$active_banca*1000, ifelse( input$select_clasa_risc_rating == "E",100000,
               input$resurse_financiare * as.numeric(input$pondere_banca)),na.rm = TRUE )
       return( round(new_limit/1000000,1) * 1000000 )
       
       } )
+    
+   
+    
     
     # I update limita trezorerie UI whenever I calculate it or update it inside vals_rating$limita_trezorerie
     observeEvent( limita_trezorerie(),{
@@ -306,12 +349,12 @@ mod_rating_update_server <- function(id, vals){
     
     observeEvent(input$save_banca_rating,{
       shinyWidgets::ask_confirmation(ns("confirm_save"),
-                                     title = ifelse(input$data_initiala_rating == vals_rating$banca_selectata$DataInitiala,
-                                                    "Confirmi modificarile?", "Confirmi noua limita de trezorerie?"),
-                                     text = ifelse(input$data_initiala_rating == vals_rating$banca_selectata$DataInitiala,
-                                                   "Esti sigur ca vrei sa salvezi modificarile efectuate?",
-                                                   "Esti sigur ca vrei sa salvezi noua limita de trezorerie?"),
-                                     btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
+              title = ifelse(input$data_initiala_rating == vals_rating$banca_selectata$DataInitiala,
+                      "Confirmi modificarile?", "Confirmi noua limita de trezorerie?"),
+              text = ifelse(input$data_initiala_rating == vals_rating$banca_selectata$DataInitiala,
+                     "Esti sigur ca vrei sa salvezi modificarile efectuate?",
+                     "Esti sigur ca vrei sa salvezi noua limita de trezorerie?"),
+                 btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
       
     })
     
@@ -326,7 +369,6 @@ mod_rating_update_server <- function(id, vals){
           CodFinantator = vals_rating$banca_selectata$CodFinantator,
           DenumireFinantator = input$select_denumire_finantator_rating,
           DataInitiala = input$data_initiala_rating,
-          DataExpirare = input$data_expirare_rating,
           Are_rating_extern = input$are_rating,
           Active = as.numeric(input$active_banca),
           Punctaj_Final = vals_rating$scoring_final,
@@ -346,7 +388,6 @@ mod_rating_update_server <- function(id, vals){
           DenumireFinantator = input$select_denumire_finantator_rating,
           Active = as.numeric(input$active_banca),
           DataInitiala = input$data_initiala_rating,
-          DataExpirare = input$data_expirare_rating,
           Are_rating_extern = input$are_rating,
           Agentie = input$select_agentie,
           Rating_Extern = input$select_rating,
@@ -371,13 +412,11 @@ mod_rating_update_server <- function(id, vals){
     observeEvent(vals_rating$finalise_process_compare_df,{ req(vals_rating$finalise_process_compare_df == TRUE )
       
       if ( input$data_initiala_rating > vals_rating$banca_selectata$DataInitiala) {
-        # I replace Data Expirare of modified bank with the new DataInitiala minus 1
-        vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% dplyr::mutate(
-          DataExpirare = ifelse(  DenumireFinantator == input$select_denumire_finantator_rating &
-                                    DataInitiala == vals_rating$banca_selectata$DataInitiala, input$data_initiala_rating - 1,
-                                  DataExpirare)) %>% dplyr::mutate(dplyr::across(DataExpirare,  ~ as.Date.numeric(
-                                    x = .x, origin = as.Date("1970-01-1") ))) %>% magrittr::set_rownames(value = NULL)
-      } else { vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% magrittr::set_rownames(value = NULL)  }
+        
+        vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% dplyr::select(-id) %>%
+          magrittr::set_rownames(value = NULL)
+      } else { vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% dplyr::select(-id) %>% 
+                  magrittr::set_rownames(value = NULL)  }
       
       
       

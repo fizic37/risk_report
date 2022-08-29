@@ -36,8 +36,10 @@ mod_raportare_bnr_ui <- function(id){
                  maximizable = TRUE, icon = icon("file-excel"),
           footer = "Se uploadeaza pivot-ul soldului de garantii Prima Casa folosind link-ul furnizat.
           Pivotul se construieste pornind de la baza de date a soldului PC, 
-          Cod Finantator pe rows, TipGarantie pe rows, soldul creditului, a garantiei si numarul de contracte in 
-          values, display pe classic, repeat all item labels.",    
+          Cod Finantator pe rows, TipGarantie pe rows, Sold Credit (Lei) si Sold Garantie (Lei) values cu suma
+          si Count of Cod Partener - values cu count. Display-ul va fi pe classic (click dreapata in pivot - 
+          PivotTable Options - Display - Classic PivotTable Layout), repeat all item labels (click in pivot - 
+          Design - Report Layout - Repeal All Item Labels).",    
     fluidRow(
       column(width = 6, fileInput(inputId = ns("sold_pc_pivot_input"),accept = c(".xlsx",".xls"),width = "300px",
         label = "Upload pivot sold PC",buttonLabel = "Excel only",placeholder = "no file uploaded")),

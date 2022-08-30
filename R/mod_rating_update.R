@@ -43,6 +43,8 @@ mod_rating_update_server <- function(id, vals){
     
     vals_rating <- reactiveValues()
     
+    
+    
     #Observer to update only once data limite to vals$report_date
     observeEvent(vals$report_date, {
       
@@ -117,17 +119,21 @@ mod_rating_update_server <- function(id, vals){
                                                     '0.1',
                                                     ifelse(vals_rating$banca_selectata$Clasa_Risc == "D", '0.05',
                                                            '0'))) )
-      
+     
       showModal(session = session, modalDialog(size = "l",
             title = paste0( "Editeaza banca ", vals_rating$banca_selectata$DenumireFinantator),
             footer = list( div(style = "padding-right: 100px; color: #ff007b; padding-top: 10px;",
-            h6("Daca modifici Data Initiala, voi salva o noua limita de trezorerie") ),
+            h6("Daca modifici Data Initiala si dai click save, voi salva o noua limita de trezorerie.
+               Daca dai click update voi updata vechile informatii.") ),
+            
+            shinyjs::useShinyjs(),
+            
+            actionButton(ns("update_banca_rating"),label = "Update", icon = icon("edit")),
             actionButton(ns("save_banca_rating"), label = "Save", icon = icon("save") ),
-            #modalButton(label = "Close", icon = icon("times"))
             actionButton(ns("close_modal"),label = "Close",icon = icon("times"))
             ),
                                                
-            fluidRow( column(width = 6,   shinyWidgets::pickerInput( ns("select_denumire_finantator_rating"),
+            fluidRow( column(width = 6,  shinyWidgets::pickerInput( ns("select_denumire_finantator_rating"),
                       label = "Denumire Finantator", options = list(`live-search` = TRUE),
                       choices = tabela_nume_banci$DenumireFinantator %>% unique(),
                       selected = vals_rating$banca_selectata$DenumireFinantator),
@@ -184,7 +190,15 @@ mod_rating_update_server <- function(id, vals){
       
     }, ignoreInit = TRUE, ignoreNULL = TRUE  )
     
-    
+    observeEvent(input$data_initiala_rating,{
+      if ( input$data_initiala_rating != vals_rating$banca_selectata$DataInitiala ) {
+        shinyjs::disable('update_banca_rating') 
+        shinyjs::enable('save_banca_rating') }
+      else if ( input$data_initiala_rating == vals_rating$banca_selectata$DataInitiala ) { 
+        shinyjs::disable('save_banca_rating')
+        shinyjs::enable('update_banca_rating') }
+        
+    })
    
     output$warning_select_clasa_risc_rating <- renderText({ 
       req(input$select_clasa_risc_rating,vals_rating$banca_selectata)
@@ -356,10 +370,25 @@ mod_rating_update_server <- function(id, vals){
                      "Esti sigur ca vrei sa salvezi noua limita de trezorerie?"),
                  btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
       
+      vals_rating$confirm_save <- TRUE
+      
+    })
+    
+    observeEvent(input$update_banca_rating,{
+      shinyWidgets::ask_confirmation(ns("confirm_update"), title = 'CONFIRM',
+              text = "esti sigur ca vrei sa salvezi modificarile efectuate?",
+    btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
+      
+      vals_rating$confirm_update <- TRUE
+      
+      
+      
     })
     
     # Here I only save baza date limite vechi and calculate baza date rating
-    observeEvent(input$confirm_save, {  req(input$confirm_save == TRUE, limita_trezorerie() )
+    observeEvent( c(vals_rating$confirm_save,vals_rating$confirm_update), {  
+      req( any(vals_rating$confirm_save == TRUE, vals_rating$confirm_update == TRUE), limita_trezorerie() )
+    
       removeModal(session = session)
       
       if ( input$are_rating == "NU" ) {
@@ -373,6 +402,7 @@ mod_rating_update_server <- function(id, vals){
           Active = as.numeric(input$active_banca),
           Punctaj_Final = vals_rating$scoring_final,
           Clasa_Risc = input$select_clasa_risc_rating,
+          Resurse_financiare_totale = input$resurse_financiare,
           Limita_Banca = limita_trezorerie() ) %>% cbind(vals_rating$tabel_scoring)
         }, error = function(e) {
           shiny:::reactiveStop(shinyWidgets::sendSweetAlert(session = session,title = "STOP",type = "error",
@@ -392,6 +422,7 @@ mod_rating_update_server <- function(id, vals){
           Agentie = input$select_agentie,
           Rating_Extern = input$select_rating,
           Clasa_Risc = input$select_clasa_risc_rating,
+          Resurse_financiare_totale = input$resurse_financiare,
           Limita_Banca = limita_trezorerie() ) }, error = function(e) {
             shiny:::reactiveStop( shinyWidgets::sendSweetAlert(session = session,title = "STOP",type = "error",
                         text = "Nu ai completat toate campurile. Refresh the app and start again") )
@@ -406,33 +437,33 @@ mod_rating_update_server <- function(id, vals){
       
       callModule(mod_compare_df_server, "compare_df_ui_1", df_reactive = vals_rating, red="#ff007b",green="#00ff84")
       
-      
+      vals_rating$confirm_save <- NULL
+      vals_rating$confirm_update <- NULL
     })
     
-    observeEvent(vals_rating$finalise_process_compare_df,{ req(vals_rating$finalise_process_compare_df == TRUE )
-      
-      if ( input$data_initiala_rating > vals_rating$banca_selectata$DataInitiala) {
+    
+    observeEvent( vals_rating$finalise_process_compare_df,{ req(vals_rating$finalise_process_compare_df == TRUE )
+     
+      #if ( input$data_initiala_rating > vals_rating$banca_selectata$DataInitiala) {
         
         vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% dplyr::select(-id) %>%
           magrittr::set_rownames(value = NULL)
-      } else { vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% dplyr::select(-id) %>% 
-                  magrittr::set_rownames(value = NULL)  }
+      #} else { vals_rating$baza_date_rating <-  vals_rating$df_new_prel %>% dplyr::select(-id) %>% magrittr::set_rownames(value = NULL)  }
       
-      
+     
       
       saveRDS(object = vals_rating$baza_date_rating, file = "R/reactivedata/banci/baza_date_rating.rds" )
       
       vals$baza_date_rating <- vals_rating$baza_date_rating
       
-      vals_rating$finalise_process_compare_df <- FALSE
+      vals_rating$finalise_process_compare_df <- NULL
       
-      shinyjs::reset('confirm_save')
-      shinyjs::reset('save_banca_rating')
       vals_rating$banca_selectata <- NULL
       vals_rating$clasa_finala <- NULL
       vals_rating$tabel_scoring <- NULL
       vals_rating$tabel_scor_financiar <- NULL
       vals_rating$scoring_final <- NULL
+      
       
       shinyFeedback::showToast(type = "success",title = "SUCCES",message = "Saved to database",
           .options = list("timeOut"=2000, 'positionClass'="toast-bottom-right", "progressBar" = TRUE))
@@ -442,6 +473,7 @@ mod_rating_update_server <- function(id, vals){
     observeEvent(input$close_modal,{
       removeModal(session)
       shinyjs::reset("are_rating")
+      vals_rating$update_banca_rating <- NULL
       vals_rating$tabel_scoring <- NULL
       vals_rating$tabel_scor_financiar <- NULL
       vals_rating$scoring_final <- NULL

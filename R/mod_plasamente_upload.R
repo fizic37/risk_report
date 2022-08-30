@@ -44,6 +44,11 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
     
     coresp_banci_depozite <- readRDS("R/reactivedata/balanta/coresp_banci_depozite.rds")
     
+    #I use below daatframe to provide for new banks but exculding banks that have disapeared from the market
+    tabela_nume_banci <- readRDS(file = "R/reactivedata/banci/tabela_nume_banci.rds") %>% 
+      dplyr::filter(!CodFinantator %in% c("8479295","ROMEXTERRA","BCR0001","VOLKSBANK","RCI","ATE","NEXT",
+        "CYPRUS","LEUMI","MILLENNIUM","ACCESS","BANCPOST","SMALL FINANCE","ITRO"))
+    
     vals_balanta_upload <- reactiveValues( nume_obligatorii = c("Simbol cont","Denumire cont",
                       "Solduri finale|Debit", "Solduri finale|Credit"), check_banks=TRUE )
     
@@ -233,12 +238,14 @@ mod_plasamente_upload_server <- function(id, vals, vals_balanta){
           )
         })
         output$fill_banks <- rhandsontable::renderRHandsontable({
-         
+          unique_banks <- unique(c(unique(c(coresp_banci_curente$Banca, 
+                                            coresp_banci_depozite$Banca, tabela_nume_banci$CodFinantator))))
+          
           rhandsontable::rhandsontable(data=vals_balanta_upload$df_new %>% dplyr::filter(is.na(Banca)) %>% 
             dplyr::select(1:2,4), rowHeaders = NULL,readOnly = F,colHeaders = 
              c("Simbol Cont", "Denumire Cont", "Selecteaza Finantatorul"),overflow = "visible") %>%   
             rhandsontable::hot_col(col = 3,type = "dropdown",width = "250px",
-                                   source = unique(c(coresp_banci_depozite$Banca,coresp_banci_curente$Banca))) %>%
+                                   source = unique_banks[which(!is.na(unique_banks))]) %>%
             rhandsontable::hot_col(col = 1:2,readOnly = TRUE) })
         
         shinyjs::disable(id = "save_missing_banks",asis = FALSE)

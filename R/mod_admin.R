@@ -131,7 +131,7 @@ mod_admin_server <- function(id, vals){
       vals_admin$bi_diferente <- vals_admin$bi_banci[which(is.na(match(vals_admin$bi_banci$FinantatorID,
                                       table = vals_admin$tabela_nume_banci$FinantatorID))),]
       
-      
+    
       if ( nrow(vals_admin$bi_diferente) == 0 ) {
         shinyFeedback::showToast(type = "success",title = "SUCCES! No need for further action",
         message = "Baza de date a bancilor este sincronizata cu BI-ul furnizat",keepVisible = TRUE, session = session)

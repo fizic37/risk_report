@@ -369,20 +369,22 @@ mod_rating_update_server <- function(id, vals){
                      "Esti sigur ca vrei sa salvezi modificarile efectuate?",
                      "Esti sigur ca vrei sa salvezi noua limita de trezorerie?"),
                  btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
-      
-      vals_rating$confirm_save <- TRUE
-      
-    })
+          })
+    
+    observeEvent( input$confirm_save,{
+      vals_rating$confirm_save <- input$confirm_save
+    } )
     
     observeEvent(input$update_banca_rating,{
       shinyWidgets::ask_confirmation(ns("confirm_update"), title = 'CONFIRM',
-              text = "esti sigur ca vrei sa salvezi modificarile efectuate?",
+              text = "Esti sigur ca vrei sa salvezi modificarile efectuate?",
     btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
       
-      vals_rating$confirm_update <- TRUE
       
-      
-      
+         })
+    
+    observeEvent( input$confirm_update,{
+      vals_rating$confirm_update <- input$confirm_update
     })
     
     # Here I only save baza date limite vechi and calculate baza date rating

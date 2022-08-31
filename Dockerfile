@@ -1,11 +1,12 @@
 FROM rocker/r-ver:4.1.0
-RUN apt-get update && apt-get install -y  git-core imagemagick libcairo2-dev libcurl4-openssl-dev libgit2-dev libicu-dev libpng-dev libssl-dev libxml2-dev nano make pandoc pandoc-citeproc zlib1g-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y  git-core imagemagick libcairo2-dev libcurl4-openssl-dev libgit2-dev libicu-dev libpng-dev libsodium-dev libssl-dev libxml2-dev nano make pandoc pandoc-citeproc zlib1g-dev && rm -rf /var/lib/apt/lists/*
 RUN echo "options(repos = c(CRAN = 'https://cran.rstudio.com/'), download.file.method = 'libcurl', Ncpus = 4)" >> /usr/local/lib/R/etc/Rprofile.site
 RUN R -e 'install.packages("remotes")'
 RUN Rscript -e 'remotes::install_version("htmltools",upgrade="never", version = "0.5.1.1")'
 RUN Rscript -e 'remotes::install_version("magrittr",upgrade="never", version = "2.0.1")'
 RUN Rscript -e 'remotes::install_version("tibble",upgrade="never", version = "3.1.3")'
 RUN Rscript -e 'remotes::install_version("purrr",upgrade="never", version = "0.3.4")'
+RUN Rscript -e 'remotes::install_version("stringi",upgrade="never", version = "1.7.3")'
 RUN Rscript -e 'remotes::install_version("stringr",upgrade="never", version = "1.4.0")'
 RUN Rscript -e 'remotes::install_version("dplyr",upgrade="never", version = "1.0.7")'
 RUN Rscript -e 'remotes::install_version("shiny",upgrade="never", version = "1.6.0")'
@@ -14,6 +15,7 @@ RUN Rscript -e 'remotes::install_version("rmarkdown",upgrade="never", version = 
 RUN Rscript -e 'remotes::install_version("tidyr",upgrade="never", version = "1.1.3")'
 RUN Rscript -e 'remotes::install_version("lubridate",upgrade="never", version = "1.7.10")'
 RUN Rscript -e 'remotes::install_version("config",upgrade="never", version = "0.3.1")'
+RUN Rscript -e 'remotes::install_version("sodium",upgrade="never", version = "1.2.1")'
 RUN Rscript -e 'remotes::install_version("flextable",upgrade="never", version = "0.6.9")'
 RUN Rscript -e 'remotes::install_version("rhandsontable",upgrade="never", version = "0.3.8")'
 RUN Rscript -e 'remotes::install_version("gfonts",upgrade="never", version = "0.1.3")'

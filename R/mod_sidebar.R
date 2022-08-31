@@ -11,7 +11,7 @@ mod_sidebar_ui <- function(id){
   ns <- NS(id)
   
   
-  bs4Dash::sidebarMenuOutput(outputId = ns("sidebar")) 
+  bs4Dash::sidebarMenuOutput(outputId = ns("sidebar"))
   
 }
     
@@ -22,7 +22,7 @@ mod_sidebar_server <- function(id, vals) {
   
   moduleServer(id, function(input, output, session) {
     
-     risk_user <- bs4Dash::sidebarMenu(
+     admin_user <- bs4Dash::sidebarMenu(
       id = session$ns("tabs"),
       bs4Dash::menuItem(
         tabName = "home",
@@ -56,12 +56,72 @@ mod_sidebar_server <- function(id, vals) {
       bs4Dash::menuItem(text = "Administrator",icon = icon("tools"),tabName = "admin",selected = FALSE)
       
      )
-        
      
+     risk_user <- bs4Dash::sidebarMenu(
+       id = session$ns("tabs"),
+       bs4Dash::menuItem(
+         tabName = "home",
+         text = "Home",
+         icon = icon("home"),
+         selected = F ),
+       
+       hr(),
+       
+       bs4Dash::menuItem(
+         text = "Raport prudentialitate",
+         tabName = "prudentialitate",
+         selected = TRUE,
+         icon = icon("product-hunt")  )   ,
+       hr(),
+       
+       bs4Dash::menuItem( text = "BNR raportari",startExpanded = TRUE,
+                          tabName = "bnr", selected = FALSE,  icon = icon("bold"),
+                          
+                          bs4Dash::menuSubItem(text = "Prima Casa",tabName = "prima_casa",
+                                               icon = icon("house-user"),selected = FALSE ) ),
+       
+       hr(),
+       
+       bs4Dash::menuItem( tabName = "banci",
+                          text = "Banci - Clasa de Risc",   icon = icon("star"),
+                          selected = FALSE,startExpanded = F)
+       
+       )
+     
+     guest_user <- bs4Dash::sidebarMenu(
+       id = session$ns("tabs"),
+       
+       bs4Dash::menuItem(
+         tabName = "home",
+         text = "Home",
+         icon = icon("home"),
+         selected = F ),
+       
+       hr(),
+       
+       bs4Dash::menuItem(
+         text = "Raport prudentialitate",
+         tabName = "prudentialitate",
+         selected = TRUE,
+         icon = icon("product-hunt")  )   ,
+       hr(),
+       
+       
+       bs4Dash::menuItem( tabName = "banci",
+                          text = "Banci - Clasa de Risc",   icon = icon("star"),
+                          selected = FALSE,startExpanded = F)
+       
+     )
+        
+  no_user <- bs4Dash::sidebarMenu()
   
-  output$sidebar <- bs4Dash::renderMenu(risk_user)
   
+  output$sidebar <- bs4Dash::renderMenu({
+     if( is.null(vals$user_type) ) {no_user} else if ( vals$user_type == 'admin') {admin_user} else { risk_user}
+   
+  })
   
+ 
   observeEvent(input$tabs,{ 
     # I use this in order to have a selection of all inputs in sidebar. This way, I don`t have to call modules
     # every time a sidebar is selected, I only call modules ones.`

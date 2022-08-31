@@ -5,6 +5,8 @@
 #' @import shiny
 #' @noRd
 app_server <- function( input, output, session ) {
+  
+  login <- FALSE
   sidebar_selected <- c()
   box_selected <- c()
   raport_selected_tab <- c() #"Cap I - Garantii"
@@ -14,12 +16,14 @@ app_server <- function( input, output, session ) {
   
   
   
-  vals <- reactiveValues(sidebar_selected = sidebar_selected, view_baza_solduri = view_baza_solduri,
+  vals <- reactiveValues(login = login, sidebar_selected = sidebar_selected, view_baza_solduri = view_baza_solduri,
                          raport_selected_tab = raport_selected_tab, 
                          box_selected=box_selected,
                          final_report_check = final_report_check,box_upload_solduri_block = FALSE)
   
   vals_balanta <- reactiveValues()
+  
+  mod_login_server("login_ui_1", vals)
   
   observeEvent(vals$report_date,{
   
@@ -56,6 +60,8 @@ app_server <- function( input, output, session ) {
     
     if (sum("admin" == vals$sidebar_selected)==1) {
       mod_admin_server("admin_ui_1", vals)
+      
+      mod_admin_users_server("admin_users_ui_1")
       
       vals$sidebar_selected <- c(vals$sidebar_selected,"admin") }
     

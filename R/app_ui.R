@@ -8,9 +8,13 @@ app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
+    
     bs4Dash::dashboardPage(skin = "blue", dark = FALSE,  title = "RiskReporting",
+    
       sidebar = bs4Dash::dashboardSidebar( mod_sidebar_ui("sidebar_ui_1"),skin = "light",collapsed = TRUE),
+      
       body = bs4Dash::dashboardBody( 
+        mod_login_ui("login_ui_1"),
         bs4Dash::tabItems(
               #bs4Dash::tabItem(tabName = "garantii"),
               bs4Dash::tabItem(tabName = "prudentialitate", mod_prudentialitate_ui("prudentialitate_ui_1")),

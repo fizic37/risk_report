@@ -11,6 +11,10 @@ mod_admin_ui <- function(id){
   ns <- NS(id)
   bs4Dash::tabsetPanel(id = ns("admin"),  selected = T,
   
+  shiny::tabPanel(title = "App Users",value = "users",icon = icon("users"),
+                  mod_admin_users_ui("admin_users_ui_1") ),
+                  
+  
   shiny::tabPanel(title = "Uploads - diverse",value = "uploads",icon = icon("file-upload"),
                   
                   bs4Dash::box( title="Upload modelul de raport final",

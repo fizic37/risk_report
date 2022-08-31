@@ -43,7 +43,7 @@ mod_rating_update_server <- function(id, vals){
     
     vals_rating <- reactiveValues()
     
-    
+    # output$diverse <- renderPrint(input$data_initiala_rating)
     
     #Observer to update only once data limite to vals$report_date
     observeEvent(vals$report_date, {
@@ -160,11 +160,13 @@ mod_rating_update_server <- function(id, vals){
                       verbatimTextOutput(ns("warning_select_clasa_risc_rating"))
                       ) ,
                                                
-      column(width = 6, shinyWidgets::airDatepickerInput( ns("data_initiala_rating"),
-                       minDate = vals_rating$banca_selectata$DataInitiala,
-                       label = "Data Initiala",language = "ro", autoClose = TRUE,
-                         value = vals_rating$banca_selectata$DataInitiala ), 
-        
+       column(width = 6, 
+      shinyWidgets::airDatepickerInput( ns("data_initiala_rating"),
+      minDate = as.Date("2021-12-13"),#vals_rating$banca_selectata$DataInitiala,
+      label = "Data Initiala",language = "ro", autoClose = TRUE,value = vals_rating$banca_selectata$DataInitiala ),
+        # dateInput(inputId = ns("data_initiala_rating"),label = "Data de incepere a limitei", autoclose = TRUE,
+        #   min = as.Date("2021-12-13"),
+        #   language = "ro", value=Sys.Date() ), #value = vals_rating$banca_selectata$DataInitiala),
                            
                      shinyWidgets::pickerInput( ns("are_rating"),
                          selected = vals_rating$banca_selectata$Are_rating_extern,
@@ -174,8 +176,10 @@ mod_rating_update_server <- function(id, vals){
                                              value = vals_rating$banca_selectata$Limita_Banca),
              textOutput(ns("warning_limita_trezorerie")),
              tags$head(tags$style("#rating_update_ui_1-warning_limita_trezorerie{color: #ff00fb;")),                          
-                                                    
-                        uiOutput(ns("show_ratings")),
+      
+                        # verbatimTextOutput(ns("diverse"))  ,                          
+                        
+      uiOutput(ns("show_ratings")),
                         uiOutput(ns("show_scor"))
                                                ),
                                                
@@ -189,6 +193,8 @@ mod_rating_update_server <- function(id, vals){
       vals_rating$clasa_finala <- input$select_clasa_risc_rating   
       
     }, ignoreInit = TRUE, ignoreNULL = TRUE  )
+    
+    
     
     observeEvent(input$data_initiala_rating,{
       if ( input$data_initiala_rating != vals_rating$banca_selectata$DataInitiala ) {

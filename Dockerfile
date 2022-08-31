@@ -12,6 +12,7 @@ RUN Rscript -e 'remotes::install_version("dplyr",upgrade="never", version = "1.0
 RUN Rscript -e 'remotes::install_version("shiny",upgrade="never", version = "1.7.1")'
 RUN Rscript -e 'remotes::install_version("pkgload",upgrade="never", version = "1.2.3")'
 RUN Rscript -e 'remotes::install_version("rmarkdown",upgrade="never", version = "2.14")'
+RUN Rscript -e 'remotes::install_version("renv",upgrade="never", version = "0.15.5")'
 RUN Rscript -e 'remotes::install_version("tidyr",upgrade="never", version = "1.2.0")'
 RUN Rscript -e 'remotes::install_version("lubridate",upgrade="never", version = "1.8.0")'
 RUN Rscript -e 'remotes::install_version("config",upgrade="never", version = "0.3.1")'

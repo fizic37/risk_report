@@ -37,19 +37,26 @@ mod_compare_df_server <- function(input, output, session,df_reactive, green = "#
       if (df_reactive$check_upload) {
         shinyWidgets::ask_confirmation(inputId = session$ns("ok_write_database"),session = session,
                                        title = "SUCCES",btn_colors = c(red,green),
-          text = "Baza de date poate fi uploadata cu succces. Esti sigur ca vrei sa continui?",btn_labels = c("Cancel", "OK   "))  }
+          text = "Baza de date poate fi uploadata cu succces. Esti sigur ca vrei sa continui?",
+          btn_labels = c("Cancel", "OK   "))  }
         
       else {
         shinyWidgets::sendSweetAlert(session = session,title = "NO PROCESSING",type = "error",
               text = paste("A aparut o problema la salvare",janitor::compare_df_cols_same(df_reactive$df_old, df_reactive$df_new, 
                     bind_method = "bind_rows", verbose = TRUE)))
-      }  
+      }
+      
+      df_reactive$element_id <- NULL
         
     }  
    
-   observeEvent(input$ok_write_database,{ req(input$ok_write_database == TRUE)
+   observeEvent( input$ok_write_database,{ df_reactive$ok_write_database <- input$ok_write_database })
+   
+   observeEvent( df_reactive$ok_write_database,{ req( df_reactive$ok_write_database == TRUE )
      df_reactive$df_new_prel <- dplyr::bind_rows(df_reactive$df_old, df_reactive$df_new)
      df_reactive$finalise_process_compare_df <- TRUE
+     
+     df_reactive$ok_write_database <- NULL
      
    })
    

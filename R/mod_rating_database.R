@@ -49,7 +49,8 @@ mod_rating_database_server <- function(id, vals){
                       readOnly = FALSE,width = 1370, height = 600, 
                       rowHeaderWidth = 100,search = TRUE,rowHeaders = NULL ) %>% 
       
-      rhandsontable::hot_cols(manualColumnResize = TRUE, colWidths = c(150,rep(112,18))) %>%
+      rhandsontable::hot_cols(manualColumnResize = TRUE, colWidths = c(150,rep(112,18)),
+                              columnSorting = TRUE,fixedColumnsLeft = 2) %>%
       
       rhandsontable::hot_col(col = "DenumireFinantator",type = "dropdown",
                              source = unique(tabela_nume_banci$DenumireFinantator)) %>%

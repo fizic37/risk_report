@@ -18,7 +18,7 @@ mod_rating_update_ui <- function(id){
              dateInput(inputId = ns("data_limite"),label = "Data la care voi afisa limitele in vigoare",
                        min = as.Date("2020-08-28"),value = Sys.Date(),language = "ro",autoclose = TRUE),
              hr() ),
-     
+   
       
       column(width = 12,DT::dataTableOutput(outputId = ns("baza_date_limite")), br()),
       
@@ -43,7 +43,7 @@ mod_rating_update_server <- function(id, vals){
     
     vals_rating <- reactiveValues()
     
-    # output$diverse <- renderPrint(input$data_initiala_rating)
+   
     
     #Observer to update only once data limite to vals$report_date
     observeEvent(vals$report_date, {
@@ -162,7 +162,7 @@ mod_rating_update_server <- function(id, vals){
                                                
        column(width = 6, 
       shinyWidgets::airDatepickerInput( ns("data_initiala_rating"),
-      minDate = as.Date("2021-12-13"),#vals_rating$banca_selectata$DataInitiala,
+      minDate = as.Date("2021-12-13"),position = 'left top',
       label = "Data Initiala",language = "ro", autoClose = TRUE,value = vals_rating$banca_selectata$DataInitiala ),
         # dateInput(inputId = ns("data_initiala_rating"),label = "Data de incepere a limitei", autoclose = TRUE,
         #   min = as.Date("2021-12-13"),
@@ -177,7 +177,7 @@ mod_rating_update_server <- function(id, vals){
              textOutput(ns("warning_limita_trezorerie")),
              tags$head(tags$style("#rating_update_ui_1-warning_limita_trezorerie{color: #ff00fb;")),                          
       
-                        # verbatimTextOutput(ns("diverse"))  ,                          
+                                                
                         
       uiOutput(ns("show_ratings")),
                         uiOutput(ns("show_scor"))
@@ -367,7 +367,10 @@ mod_rating_update_server <- function(id, vals){
                                            value = round( limita_trezorerie()/1000000,1)*1000000)
     })
     
-    observeEvent(input$save_banca_rating,{
+    observeEvent(input$save_banca_rating,{ vals_rating$save_banca_rating <- input$save_banca_rating })
+    
+    
+     observeEvent( vals_rating$save_banca_rating,{
       shinyWidgets::ask_confirmation(ns("confirm_save"),
               title = ifelse(input$data_initiala_rating == vals_rating$banca_selectata$DataInitiala,
                       "Confirmi modificarile?", "Confirmi noua limita de trezorerie?"),
@@ -375,6 +378,8 @@ mod_rating_update_server <- function(id, vals){
                      "Esti sigur ca vrei sa salvezi modificarile efectuate?",
                      "Esti sigur ca vrei sa salvezi noua limita de trezorerie?"),
                  btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
+      
+      vals_rating$save_banca_rating <- NULL
           })
     
     observeEvent( input$confirm_save,{
@@ -410,7 +415,7 @@ mod_rating_update_server <- function(id, vals){
           Active = as.numeric(input$active_banca),
           Punctaj_Final = vals_rating$scoring_final,
           Clasa_Risc = input$select_clasa_risc_rating,
-          Resurse_financiare_totale = input$resurse_financiare,
+          Resurse_financiare_totale = as.numeric(input$resurse_financiare),
           Limita_Banca = limita_trezorerie() ) %>% cbind(vals_rating$tabel_scoring)
         }, error = function(e) {
           shiny:::reactiveStop(shinyWidgets::sendSweetAlert(session = session,title = "STOP",type = "error",
@@ -430,7 +435,7 @@ mod_rating_update_server <- function(id, vals){
           Agentie = input$select_agentie,
           Rating_Extern = input$select_rating,
           Clasa_Risc = input$select_clasa_risc_rating,
-          Resurse_financiare_totale = input$resurse_financiare,
+          Resurse_financiare_totale = as.numeric(input$resurse_financiare),
           Limita_Banca = limita_trezorerie() ) }, error = function(e) {
             shiny:::reactiveStop( shinyWidgets::sendSweetAlert(session = session,title = "STOP",type = "error",
                         text = "Nu ai completat toate campurile. Refresh the app and start again") )
@@ -447,6 +452,7 @@ mod_rating_update_server <- function(id, vals){
       
       vals_rating$confirm_save <- NULL
       vals_rating$confirm_update <- NULL
+      
     })
     
     
@@ -465,6 +471,8 @@ mod_rating_update_server <- function(id, vals){
       vals$baza_date_rating <- vals_rating$baza_date_rating
       
       vals_rating$finalise_process_compare_df <- NULL
+      
+      vals_rating$element_id <- NULL
       
       vals_rating$banca_selectata <- NULL
       vals_rating$clasa_finala <- NULL

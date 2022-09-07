@@ -35,8 +35,10 @@ mod_rating_database_ui <- function(id){
 mod_rating_database_server <- function(id, vals){
   moduleServer( id, function(input, output, session){
     
+    ns <- session$ns
     
-    tabela_nume_banci <- readRDS(file = "R/reactivedata/banci/tabela_nume_banci.rds")
+    tabela_nume_banci <- readRDS(file = "R/reactivedata/banci/tabela_nume_banci.rds") %>%
+      dplyr::filter(DataInitiala <= Sys.Date(), DataExpirare >= Sys.Date())
     
     mapare_rating <- readRDS("R/reactivedata/banci/mapare_rating.rds")
     
@@ -79,9 +81,20 @@ mod_rating_database_server <- function(id, vals){
       readr::write_csv(x = vals$baza_date_rating, file = file ) } )
     
     observeEvent(input$save_baza_date,{ req(input$baza_date_rating)
+     
+      shinyWidgets::ask_confirmation(inputId = ns("confirm_save"), title = 'CONFIRM',
+               text = "Esti sigur ca vrei sa salvezi baza de date?",
+              btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
+      
+      vals_rating_database$confirm_save <- input$confirm_save
+      })
+      
+    
+    observeEvent(vals_rating_database$confirm_save,{ req(vals_rating_database$confirm_save == TRUE )
       
       vals_rating_database$baza_date_rating <- rhandsontable::hot_to_r(input$baza_date_rating) %>%
-        dplyr::left_join(y = tabela_nume_banci %>% dplyr::select(CodFinantator,DenumireFinantator), by = "DenumireFinantator")
+        dplyr::left_join(y = tabela_nume_banci %>% dplyr::select(CodFinantator,DenumireFinantator), 
+                         by = "DenumireFinantator")
       
      
       if ( janitor::compare_df_cols_same(vals_rating_database$baza_date_rating, vals$baza_date_rating)) {

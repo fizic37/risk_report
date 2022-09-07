@@ -120,7 +120,7 @@ mod_anexe_server <- function(id, vals){
     vals_anexe$rata_anualizata_plati <- sum(baza_plati$Plati)/sum(vals_anexe$solduri_begining_year$Sold_Garantii) * 12/
       lubridate::month(vals$report_date)
     
-  
+   
     vals_anexe$rata_platilor <- vals_anexe$solduri_begining_year %>% dplyr::group_by(Banca) %>%
       dplyr::summarise(Sold_Garantii = sum(Sold_Garantii)) %>%
       dplyr::left_join(baza_plati, by = "Banca") %>% dplyr::mutate(Plati = ifelse(is.na(Plati), 0, Plati)) %>%
@@ -156,6 +156,7 @@ mod_anexe_server <- function(id, vals){
     
     vals_anexe$resurse_proprii <- sum(vals_anexe$balanta_proprii$`Solduri finale|Debit`)
     
+   
     
     vals_anexe$anexac <-    dplyr::left_join(   x = vals_anexe$balanta_proprii %>%
           dplyr::filter(tip_plasament %in% c( "Conturi_Curente", "Gestionari_Cautiuni_Garantii","Depozite")  ) %>%  
@@ -166,7 +167,8 @@ mod_anexe_server <- function(id, vals){
             dplyr::summarise(Expunere = sum(`Solduri finale|Debit`)) %>% as.data.frame(),
           y = vals_anexe$clase_risc  %>% dplyr::select(DenumireFinantator,  ClasaRisc,  LimitaTrezorerie ),
           by = c("Banca" = "DenumireFinantator")  )    
-   
+    
+    
     vals_anexe$anexaC_tabel <-  tryCatch(expr = { 
       vals_anexe$anexac %>% tidyr::pivot_wider(names_from = tip_plasament,
               values_from = Expunere, values_fill = 0) %>% dplyr::arrange(ClasaRisc, desc(Depozite)) %>%

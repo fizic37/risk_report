@@ -19,9 +19,9 @@ mod_login_ui <- function(id){
         #
         tags$h2("LOG IN", class = "text-center", style = "padding-top: 0;color:#ff007b; font-weight:600;"),
         textInput(inputId = ns("userName"),  placeholder = "Username",
-                  label = tagList(icon("user"), "Username"),value = "advanced_user"),
+                  label = tagList(icon("user"), "Username"),value = ""),
         br(),
-        passwordInput(inputId = ns("passwd"), placeholder = "Password",value = "advanced",
+        passwordInput(inputId = ns("passwd"), placeholder = "Password",value = "",
                       label = tagList(icon("unlock-alt"), "Password")),
         br(),
         div(style = "text-align: center; color: #ffffff",

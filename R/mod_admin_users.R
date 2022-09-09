@@ -62,18 +62,19 @@ mod_admin_users_server <- function(id){
     observeEvent(input$update_user,{
       shinyWidgets::ask_confirmation(ns("confirm_update"), title = 'CONFIRM',
             text = "Esti sigur ca vrei sa salvezi modificarile efectuate?",
-      btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")
-      
-      vals_credentials$confirm_update <- input$confirm_update
-    })
+      btn_labels = c("NU, renunta","OK, salveaza"),btn_colors = c("#ff007b","#00ff84"),type = "info")  })
+    
+    observeEvent(input$confirm_update,{  vals_credentials$confirm_update <- input$confirm_update })
     
     observeEvent(  vals_credentials$confirm_update, { req(   vals_credentials$confirm_update == TRUE )
+      
       vals_credentials$updated_user <- data.frame(username_id =  vals_credentials$selected_user$username_id,
                 passod   = sapply(vals_credentials$new_password,sodium::password_store),
                 permission  = input$user_type, stringsAsFactors = F,row.names = NULL)
       
       vals_credentials$credentials <- dplyr::bind_rows(vals_credentials$updated_user, vals_credentials$credentials %>% 
                                   dplyr::filter(username_id != vals_credentials$selected_user$username_id))
+     
       saveRDS(object = vals_credentials$credentials, file = "R/credentials/credentials.rds" )
       vals_credentials$confirm_update <- NULL
       removeModal(session)

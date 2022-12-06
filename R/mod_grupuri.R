@@ -99,7 +99,8 @@ mod_grupuri_server <- function(id, vals){
         # I process tipologie conventie, for every contract that contains OUG, AGRO, PROD, GCU sau GCI it will be garantie_stat
         grupuri_reactive$filtered_data <- grupuri_reactive$filtered_data %>%
           dplyr::mutate(tipologie_conventie = ifelse( is.na(tipologie_conventie) & 
-              stringr::str_detect(string = grupuri_reactive$filtered_data$Nrcontract, pattern = "OUG|AGRO|PROD|GCU|GCI"),
+              stringr::str_detect(string = grupuri_reactive$filtered_data$Nrcontract, 
+                                  pattern = "OUG|AGRO|PROD|GCU|GCI|AGROPLUS|GCIPLUS|INVESTPLUS"),
                     "garantii_stat", tipologie_conventie))
         
         
